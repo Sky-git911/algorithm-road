@@ -175,6 +175,10 @@ footer { color: var(--ink-soft); font-size: 0.82rem; margin-top: 2.5rem; }
 .cell.last-mid .v { border-width: 2px; border-color: var(--accent); font-weight: 700; }
 .cell.found .v { background: var(--ok-soft); border-color: var(--ok); font-weight: 700; }
 .cell .mk { font-size: 0.72rem; color: var(--accent); font-weight: 700; min-height: 1.1rem; font-family: var(--mono); }
+/* 分区着色（边界二分等课：左段已确认 < t、右段已确认 ≥ t、刀痕） */
+.cell.ltz .v { background: #e8edf3; border-color: #b9c8d8; }
+.cell.gez .v { background: var(--accent-soft); border-color: var(--accent); }
+.cell.div .v { border-width: 2px; border-style: dashed; border-color: var(--ok); font-weight: 700; }
 
 .sim-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.8rem 0; font-size: 0.92rem; }
 .sim-controls label { cursor: pointer; }

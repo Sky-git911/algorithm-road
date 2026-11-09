@@ -11,7 +11,8 @@
 
 <p class="kicker">Reference · 数组 · 打印用</p>
 <h1>二分查找速查卡</h1>
-<p class="meta">配合 <a href="../lessons/0001-binary-search-invariant.html">课程 0001</a> 使用 ·
+<p class="meta">配合 <a href="../lessons/0001-binary-search-invariant.html">课程 0001</a> ·
+<a href="../lessons/0002-binary-search-boundary.html">课程 0002</a> 使用 ·
 做题时只看这张卡，不看课程页（检索练习）。</p>
 
 <h2>前提（下笔前默念）</h2>
@@ -51,9 +52,17 @@
 </table>
 <p>时间 O(log n) · 空间 O(1)（迭代版）。口述时带上「空间为什么是 O(1)：只用了 l、r、mid 三个变量」。</p>
 
-<h2>变体预告（下一课 0002）</h2>
-<p>找<strong>左边界 / 右边界</strong>（如 34 题）：命中时不返回，把边界继续往里压
-（找左边界：a[mid] === t 时 r 也往左收）。学到时在此补两行自己的话。</p>
+<h2>边界版（0002）：lower_bound —— 找分隔点</h2>
+<p>「第一个 ≥ t 的位置」：35 的插入位、34 的左右边界都是它。仍是合同 B [l, r)，决策只有两条：</p>
+<table>
+  <thead><tr><th>比较</th><th>动作</th><th>含义</th></tr></thead>
+  <tbody>
+    <tr><td>a[mid] &lt; t</td><td><code>l = mid + 1</code></td><td>mid 及左侧全部确认 &lt; t，刀痕在右</td></tr>
+    <tr><td>a[mid] ≥ t（含 === t）</td><td><code>r = mid</code>（<strong>不能 -1</strong>）</td><td>mid 及右侧全部确认 ≥ t，mid 可能就是刀痕</td></tr>
+  </tbody>
+</table>
+<p>终止 <code>l === r</code> 即刀痕，取值 [0, n]（返回 n = 全体 &lt; t）。命中「等于」不返回，继续左压。</p>
+<p><strong>34 组合</strong>：左边界 = lb(t)；右边界 = lb(t+1) − 1；存在检查 <code>lb &lt; n &amp;&amp; a[lb] === t</code>——一种循环走天下。</p>
 
 <h2>通过判定（错题本标准）</h2>
 <div class="task">不看任何提示，20 分钟内 AC + 能口述时间/空间复杂度，才算通过。卡壳 → 明天盲写重做。</div>

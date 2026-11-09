@@ -13,8 +13,19 @@ const CASES = [
 let pass = 0;
 for (const c of CASES) {
   const got = problemFn(...c.in.map((x) => (Array.isArray(x) ? x.slice() : x)));
-  const ok = got === c.want;
+  const ok = JSON.stringify(got) === JSON.stringify(c.want);
   if (ok) pass++;
-  console.log(ok ? "PASS" : "FAIL", JSON.stringify(c.in), "->", got, ok ? "" : "(want " + c.want + ")");
+  console.log(
+    ok ? 'PASS' : 'FAIL',
+    JSON.stringify(c.in),
+    '->',
+    got,
+    ok ? '' : '(want ' + c.want + ')',
+  );
 }
-console.log(pass + "/" + CASES.length + (pass === CASES.length ? " 全过，去力扣提交" : "，改到全过为止"));
+console.log(
+  pass +
+    '/' +
+    CASES.length +
+    (pass === CASES.length ? ' 全过，去力扣提交' : '，改到全过为止'),
+);
