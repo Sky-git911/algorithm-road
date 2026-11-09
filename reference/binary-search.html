@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>速查卡 · 二分查找</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+
+<p class="kicker">Reference · 数组 · 打印用</p>
+<h1>二分查找速查卡</h1>
+<p class="meta">配合 <a href="../lessons/0001-binary-search-invariant.html">课程 0001</a> 使用 ·
+做题时只看这张卡，不看课程页（检索练习）。</p>
+
+<h2>前提（下笔前默念）</h2>
+<div class="keyidea">随机访问 + <strong>判定单调</strong>（比较 mid 后能确定排除一侧；数组有序只是最常见的形态）。
+不确定能不能排除一侧，就不能二分。</div>
+
+<h2>两种合同 · 决策对照表</h2>
+<table>
+  <thead>
+    <tr><th>决策点</th><th>合同 A：左闭右闭 [l, r]</th><th>合同 B：左闭右开 [l, r)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>r 初始值</td><td><code>n - 1</code></td><td><code>n</code></td></tr>
+    <tr><td>循环条件</td><td><code>l &lt;= r</code></td><td><code>l &lt; r</code></td></tr>
+    <tr><td>a[mid] &lt; t</td><td colspan="2"><code>l = mid + 1</code>（两种合同相同：mid 已比较过，必排除）</td></tr>
+    <tr><td>a[mid] &gt; t</td><td><code>r = mid - 1</code></td><td><code>r = mid</code></td></tr>
+    <tr><td>区间为空</td><td>l &gt; r</td><td>l ≥ r</td></tr>
+    <tr><td>命中</td><td colspan="2">a[mid] === t → 返回 mid（704 型）；变体题不急着返回，见下</td></tr>
+  </tbody>
+</table>
+
+<p><strong>不变量</strong>（每轮开始时成立）：若 t 存在，必在当前区间内。收缩语句只在维护这一句。</p>
+
+<h2>mid 的计算</h2>
+<p><code>mid = Math.floor((l + r) / 2)</code> —— JS 首选。</p>
+<div class="pitfall">JS 位运算 <code>(l + r) &gt;&gt; 1</code> 会截断成 32 位有符号整数，下标大时变负数。
+口述加分项：C++/Java 用 <code>l + (r - l) / 2</code> 防溢出（JS 安全整数 2⁵³ 内不需要）。</div>
+
+<h2>复杂度速记</h2>
+<table>
+  <thead><tr><th>规模 n</th><th>比较次数 ≈ log₂n</th><th>线性扫描</th></tr></thead>
+  <tbody>
+    <tr><td>10³</td><td>~10 次</td><td>1000 次</td></tr>
+    <tr><td>10⁵</td><td>~17 次</td><td>10 万次</td></tr>
+    <tr><td>10⁹</td><td>~30 次</td><td>已经超时了</td></tr>
+  </tbody>
+</table>
+<p>时间 O(log n) · 空间 O(1)（迭代版）。口述时带上「空间为什么是 O(1)：只用了 l、r、mid 三个变量」。</p>
+
+<h2>变体预告（下一课 0002）</h2>
+<p>找<strong>左边界 / 右边界</strong>（如 34 题）：命中时不返回，把边界继续往里压
+（找左边界：a[mid] === t 时 r 也往左收）。学到时在此补两行自己的话。</p>
+
+<h2>通过判定（错题本标准）</h2>
+<div class="task">不看任何提示，20 分钟内 AC + 能口述时间/空间复杂度，才算通过。卡壳 → 明天盲写重做。</div>
+
+<nav class="lesson-nav">
+  <a href="../lessons/0001-binary-search-invariant.html">← 课程 0001</a>
+  <a href="https://programmercarl.com/algo/array/">随想录 · 数组章 →</a>
+</nav>
+
+<footer><p>algorithm-road · 阶段 1 · 数组 · 建立于 2026-11-09</p></footer>
+
+</main>
+</body>
+</html>

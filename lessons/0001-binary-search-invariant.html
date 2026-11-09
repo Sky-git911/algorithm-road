@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0001 · 二分查找：区间定义与循环不变量</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+
+<p class="kicker">阶段 1 · 数组 · 课程 0001 · 第 1 周</p>
+<h1>二分查找：区间定义与循环不变量</h1>
+<p class="meta">约 25 分钟 · 前置：L0（见下方热身）· 实战：LeetCode 704 ·
+速查卡：<a href="../reference/binary-search.html">binary-search.html</a></p>
+
+<h2>热身 30 秒（L0 折叠）</h2>
+<p>做任何题前先问：数据规模多大，目标复杂度是多少？记住这张表就够了：
+n ≤ 10³ → O(n²) 能过；n ≤ 10⁵ → 要 O(n log n) 或 O(n)；n 越大越接近 O(log n)、O(1)。
+完整表在你的 <a href="../algo-tracker/专题笔记/00-算法基础.md">00-算法基础.md</a>。
+今天这题：有序数组里找一个数——「有序」是信号弹，答案几乎总是二分，O(log n)。</p>
+
+<h2>为什么第一题就容易翻车</h2>
+<p>704 二分查找，思路 10 秒就能讲明白：看中间，砍一半。但自己写的时候，
+「<strong>为什么死循环了？为什么漏了那个元素？</strong>」——坑从来不在思路，而在<strong>区间定义</strong>：
+一会儿把 r 当「包含」，一会儿当「不包含」，循环条件、收缩语句就配套错了。</p>
+
+<div class="keyidea">区间定义是一份<strong>合同</strong>：你先声明 a[l..r] 的 r 含不含，之后每一行代码——
+循环条件、l/r 怎么收缩——都必须履约。合同只签一种，签了就不改。</div>
+
+<h2>知识：前提、两种合同、一个不变量</h2>
+
+<p><strong>二分的前提</strong>不只是「数组有序」，更一般的说法是<strong>判定单调</strong>：
+每次看 mid，你能<strong>确定地排除</strong>一侧（target 不可能在那一侧）。有序数组里比大小是这样，
+别的场景（比如后面会遇到的下界函数）也是这样——记住一般版。</p>
+
+<p>两种合同，任选一种，<strong>坚持到底</strong>：</p>
+
+<table>
+  <thead>
+    <tr><th>决策点</th><th>合同 A：左闭右闭 [l, r]</th><th>合同 B：左闭右开 [l, r)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>r 初始值</td><td><code>n - 1</code>（最后一个元素）</td><td><code>n</code>（越界空端点）</td></tr>
+    <tr><td>循环条件</td><td><code>l &lt;= r</code>（单元素也是合法区间）</td><td><code>l &lt; r</code>（l == r 时区间已空）</td></tr>
+    <tr><td>a[mid] &lt; t</td><td><code>l = mid + 1</code></td><td><code>l = mid + 1</code>（相同）</td></tr>
+    <tr><td>a[mid] &gt; t</td><td><code>r = mid - 1</code>（mid 必须排除）</td><td><code>r = mid</code>（r 本就不含）</td></tr>
+    <tr><td>区间为空</td><td>l &gt; r</td><td>l ≥ r</td></tr>
+  </tbody>
+</table>
+
+<p>为什么收缩不一样？看<strong>循环不变量</strong>：</p>
+
+<div class="keyidea">不变量：每一轮循环开始时，<strong>若 target 存在，它必在当前区间内</strong>。
+a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含端点的，所以必须 <code>mid - 1</code> 才能把 mid 排除掉；
+开区间的 r 本来就不含自己，所以 <code>r = mid</code> 刚好。每一行收缩代码，都是在维护这条不变量。</div>
+
+<div class="pitfall">mid 用 <code>Math.floor((l + r) / 2)</code>。JS 里别写 <code>(l + r) &gt;&gt; 1</code>：
+位运算会把数字截断成 32 位有符号整数，下标一大就变负数。面试口述时可以补一句
+「C++/Java 里我还会写 <code>l + (r - l) / 2</code> 防溢出」——JS 安全整数到 2⁵³ 不需要，但这句话值印象分。</div>
+
+<h2>亲手走一遍：奶茶店取餐号</h2>
+<p>15 个已排序的取餐号。选一个目标，<strong>每步先口头预测</strong>（下一步谁动？动到哪？），再点「步进」验证。
+试试 99（不存在）和 3（在头上），再切到另一种合同重走同一个目标，比较每一步的差别。</p>
+
+<div class="sim no-print">
+  <div class="sim-controls">
+    <span>合同：
+      <label><input type="radio" name="conv" value="1" checked> A 左闭右闭</label>
+      <label><input type="radio" name="conv" value="0"> B 左闭右开</label>
+    </span>
+    <span>目标单号：
+      <button class="btn tgt" type="button">40</button>
+      <button class="btn tgt" type="button">30</button>
+      <button class="btn tgt" type="button">3</button>
+      <button class="btn tgt" type="button">99</button>
+    </span>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="resetbtn">重置</button>
+  </div>
+  <div class="cells" id="cells"></div>
+  <div class="sim-note" id="invariant">先在上方选一个目标单号。</div>
+  <ol class="sim-log" id="simlog"></ol>
+  <p class="sim-result" id="simres"></p>
+</div>
+
+<h2>检查站：五道题</h2>
+<p>不看上面的表，凭刚建立的模型作答（答错看解析，然后整组重做——重做会打乱选项顺序）。</p>
+
+<div class="quiz" data-quiz>
+<script type="application/json">
+{
+  "questions": [
+    {
+      "q": "二分查找成立的前提是什么？",
+      "options": [
+        { "t": "数组有序可判定", "why": "对——且更一般的说法是「判定单调」：每次比较 mid 后能确定排除一侧。无序时无法断定 target 在哪半。" },
+        { "t": "数组无序但很长", "why": "错。无序时比较 mid 后无法断定该砍哪半，二分失效；数组多长都救不了。" },
+        { "t": "数组元素均相同", "why": "错。全是相同元素时谈不上「排除一半」，也就没有二分收缩的过程。" },
+        { "t": "数组长度为偶数", "why": "错。奇偶只影响 mid 落在哪一格，对二分能否成立毫无影响。" }
+      ],
+      "answer": 0
+    },
+    {
+      "q": "合同 A（左闭右闭）中，当 a[mid] > target 时，r 应更新为？",
+      "options": [
+        { "t": "mid + 2", "why": "错。多退了一格，mid+1 处的元素可能就是 target，会被漏掉。" },
+        { "t": "mid + 1", "why": "错。方向反了——a[mid] > t 说明 target 在左半，r 应该向左收缩。" },
+        { "t": "mid - 1", "why": "对。mid 已比较过、被排除；闭区间含端点，所以必须退到 mid - 1 才真正排除了 mid。" },
+        { "t": "mid - 2", "why": "错。多退了一格，mid - 1 处的元素可能就是 target，会被漏掉。" }
+      ],
+      "answer": 2
+    },
+    {
+      "q": "「循环不变量」在本课中指的是？",
+      "options": [
+        { "t": "区间必然不变化", "why": "错。区间每轮都在收缩——「不变量」不变的是那条断言，不是区间本身。" },
+        { "t": "目标必在区间内", "why": "对。准确说：每轮开始时，若 target 存在则必在当前区间内。循环体每行都在维护它。" },
+        { "t": "区间必然不重叠", "why": "错。只有一个区间在收缩，谈不上重叠与否；这与不变量无关。" },
+        { "t": "中点必然是答案", "why": "错。mid 只是当前探测点，大多数轮次里 mid 并不是 target。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "合同 B（左闭右开 [l, r)）中，循环继续的条件是？",
+      "options": [
+        { "t": "l > r", "why": "错。这是区间早已为空的状态，作为循环条件意味着循环体一次都不执行。" },
+        { "t": "r < l", "why": "错。同上，这是空区间的另一种写法，不是继续条件。" },
+        { "t": "l = r", "why": "错。左闭右开下 l == r 意味着区间为空，此时必须退出，否则死循环。" },
+        { "t": "l < r", "why": "对。l == r 时 [l, r) 不含任何元素，区间为空，循环必须终止。" }
+      ],
+      "answer": 3
+    },
+    {
+      "q": "循环条件和收缩语句开闭混用（不配套）的后果是？",
+      "options": [
+        { "t": "死循环或漏元素", "why": "对。合同被违反，不变量破坏：要么区间永远收不空（死循环），要么把 target 所在格排除掉（漏检）。" },
+        { "t": "仅仅是风格差异", "why": "错。风格差异是「选 A 还是选 B」；混用是违约，直接产生错误程序。" },
+        { "t": "语言会直接报错", "why": "错。JS 不会替你检查逻辑契约，程序照常运行，只是结果不对。" },
+        { "t": "完全不会有影响", "why": "错。这是本题最容易踩的坑，两种合同各配各的零件，混着装必然出 bug。" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+</script>
+</div>
+
+<h2>实战</h2>
+<div class="task">
+  <p><strong>LeetCode 704 · 二分查找</strong>（<a href="https://leetcode.cn/problems/binary-search/">题目链接</a>）——JS。</p>
+  <p>流程照你的 SOP：25 分钟独立思考；写之前先决定合同 A 还是 B（写在注释第一行）；
+  AC 之后口述时间/空间复杂度（这题：O(log n) / O(1)）。</p>
+  <ul>
+    <li>一次通过且 ≤20 分钟 → 只在 <a href="../algo-tracker/进度表.md">进度表</a> 打卡，不进错题本；</li>
+    <li>卡壳 / 看题解 / 超时 → 记入 <a href="../algo-tracker/错题本.md">错题本</a>（卡点分类 + 破题点 ≤2 句自己的话），明天 D+1 盲写重做；</li>
+    <li>状态好可以接着做选做：35 搜索插入位置（Hot100 二分组，下一课的预习）。</li>
+  </ul>
+</div>
+
+<h2>延伸</h2>
+<p><strong>Primary source</strong>：读完本课还没做题前，可以对照
+<a href="https://programmercarl.com/algo/array/">代码随想录 · 数组章 · 704 二分查找</a>的讲解——
+特别注意它强调的正是「区间的定义就是不变量」。</p>
+<p>速查卡已就位：<a href="../reference/binary-search.html">二分查找速查卡</a>（可打印，做题时只看它不看课程）。</p>
+
+<div class="keyidea">有任何不清楚的地方——概念、模拟器某一步为什么那样动、quiz 某个选项的解析——
+<strong>直接回来问你的老师（我）</strong>，把课文件拖进对话或者直接描述都行。问懂了才是你的。</div>
+
+<nav class="lesson-nav">
+  <a href="../reference/binary-search.html">← 速查卡</a>
+  <span class="disabled">下一课 0002 · 二分·边界查找（未解锁）</span>
+</nav>
+
+<footer>
+  <p>algorithm-road · 面试向算法学习 · 本课属于 <a href="../SYLLABUS.md">SYLLABUS.md</a> 阶段 1 ·
+  完成实战后请在 <a href="../algo-tracker/进度表.md">进度表</a> 打卡（2026-11-09 起）。</p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+(function () {
+  "use strict";
+  var A = [3, 7, 11, 15, 19, 23, 28, 32, 36, 40, 45, 50, 54, 58, 63];
+  var N = A.length;
+  var cellsEl = document.getElementById("cells");
+  var invEl = document.getElementById("invariant");
+  var logEl = document.getElementById("simlog");
+  var resEl = document.getElementById("simres");
+  var stepBtn = document.getElementById("stepbtn");
+  var resetBtn = document.getElementById("resetbtn");
+  var tgtBtns = Array.prototype.slice.call(document.querySelectorAll(".tgt"));
+  var convBtns = Array.prototype.slice.call(document.querySelectorAll('input[name=conv]'));
+  var S = null; // {t, closed, steps, found, i}
+
+  function plan(t, closed) {
+    var steps = [], l = 0, r = closed ? N - 1 : N, found = -1, guard = 0;
+    while (closed ? l <= r : l < r) {
+      var mid = Math.floor((l + r) / 2);
+      var st = { l: l, r: r, mid: mid, al: l, ar: r };
+      if (A[mid] === t) {
+        st.branch = "eq";
+        st.note = "a[mid]=" + A[mid] + " == t：命中！返回下标 " + mid;
+        steps.push(st); found = mid; break;
+      }
+      if (A[mid] < t) {
+        st.branch = "lt"; l = mid + 1; st.al = l; st.ar = r;
+        st.note = "a[mid]=" + A[mid] + " < t：t 只能在右半 → l ← mid+1（mid 已比较过，不含）";
+      } else {
+        st.branch = "gt"; r = closed ? mid - 1 : mid; st.al = l; st.ar = r;
+        st.note = "a[mid]=" + A[mid] + " > t：t 只能在左半 → r ← " +
+          (closed ? "mid-1（闭区间含端点，mid 必须排除）" : "mid（r 本就不含，指到 mid 刚好）");
+      }
+      steps.push(st);
+      if (++guard > 40) break;
+    }
+    return { steps: steps, found: found };
+  }
+
+  function start(t) {
+    var closed = document.querySelector('input[name=conv]:checked').value === "1";
+    var p = plan(t, closed);
+    S = { t: t, closed: closed, steps: p.steps, found: p.found, i: 0 };
+    logEl.innerHTML = ""; resEl.textContent = "";
+    stepBtn.disabled = false;
+    render();
+  }
+
+  function done() { return S.i >= S.steps.length; }
+
+  function render() {
+    if (!S) { cellsEl.innerHTML = ""; return; }
+    var c = (S.i === 0)
+      ? { al: 0, ar: S.closed ? N - 1 : N }
+      : { al: S.steps[S.i - 1].al, ar: S.steps[S.i - 1].ar };
+    var html = "";
+    for (var i = 0; i < N; i++) {
+      var cls = "cell";
+      var inRange = S.closed ? (i >= c.al && i <= c.ar) : (i >= c.al && i < c.ar);
+      if (inRange) cls += " in";
+      if (S.i > 0 && S.steps[S.i - 1].mid === i) {
+        cls += (done() && S.steps[S.i - 1].branch === "eq") ? " found" : " last-mid";
+      }
+      var mk = "";
+      if (i === c.al) mk = "l";
+      if (i === c.ar) mk += (mk ? " r" : "r");
+      html += '<div class="' + cls + '"><div class="v">' + A[i] + '</div><div class="mk">' + mk + '</div></div>';
+    }
+    cellsEl.innerHTML = html;
+
+    if (!done()) {
+      invEl.innerHTML = S.closed
+        ? "不变量：若 " + S.t + " 存在，必在 a[" + c.al + ".." + c.ar + "] 内（" + (c.ar - c.al + 1) + " 个候选）。先口头预测：下一步谁动？"
+        : "不变量：若 " + S.t + " 存在，必在 a[" + c.al + ".." + (c.ar - 1) + "] 内（r=" + c.ar + " 本身不含，" + Math.max(0, c.ar - c.al) + " 个候选）。先口头预测：下一步谁动？";
+    } else if (S.found >= 0) {
+      invEl.textContent = "命中 a[" + S.found + "] = " + S.t + "。共比较 " + S.steps.length + " 次（线性扫描最坏要 " + N + " 次）。";
+      resEl.textContent = "✓ 返回 " + S.found;
+    } else {
+      invEl.textContent = "区间已空（" + (S.closed ? "l > r" : "l ≥ r") + "）→ " + S.t + " 不在数组里。共比较 " + S.steps.length + " 次。";
+      resEl.textContent = "✓ 返回 -1";
+    }
+    stepBtn.disabled = done();
+  }
+
+  stepBtn.addEventListener("click", function () {
+    if (!S || done()) return;
+    var st = S.steps[S.i];
+    S.i++;
+    var li = document.createElement("li");
+    li.textContent = st.note + "（mid=" + st.mid + "，区间 → [" + st.al + ".." + (S.closed ? st.ar : st.ar - 1) + "]）";
+    logEl.appendChild(li);
+    render();
+  });
+
+  resetBtn.addEventListener("click", function () {
+    S = null; stepBtn.disabled = true;
+    cellsEl.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
+    invEl.textContent = "已重置。选一个目标单号开始。";
+  });
+
+  tgtBtns.forEach(function (b) {
+    b.addEventListener("click", function () { start(parseInt(b.textContent, 10)); });
+  });
+  convBtns.forEach(function (b) {
+    b.addEventListener("change", function () { if (S) start(S.t); });
+  });
+})();
+</script>
+</main>
+</body>
+</html>
