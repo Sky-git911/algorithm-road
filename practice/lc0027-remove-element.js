@@ -2,14 +2,26 @@
 // 模型：快慢指针原地覆写（课程 0004）——fast 每轮必走，slow 拿到合格元素才走；
 //      不变量：[0..slow) 全为 ≠val 的元素（保序）。返回 slow。
 var removeElement = function (nums, val) {
-  // TODO 在这里写
+  let slow = 0;
+  let fast = 0;
+  while (fast < nums.length) {
+    if (nums[fast] !== val) {
+      nums[slow++] = nums[fast];
+    }
+    fast++;
+  }
+  return slow;
 };
 
 // ---------- 本地测试（提交力扣时只复制上面的 removeElement 函数）----------
 // 比力扣更严：连「前缀内容（含相对顺序）」一起校验。课程模型即保序覆写。
 const CASES = [
   { in: [[3, 2, 2, 3], 3], wantLen: 2, wantPrefix: [2, 2] },
-  { in: [[0, 1, 2, 2, 3, 0, 4, 2], 2], wantLen: 5, wantPrefix: [0, 1, 3, 0, 4] },
+  {
+    in: [[0, 1, 2, 2, 3, 0, 4, 2], 2],
+    wantLen: 5,
+    wantPrefix: [0, 1, 3, 0, 4],
+  },
   { in: [[1], 1], wantLen: 0, wantPrefix: [] },
   { in: [[1], 2], wantLen: 1, wantPrefix: [1] },
   { in: [[4, 4, 4], 4], wantLen: 0, wantPrefix: [] },

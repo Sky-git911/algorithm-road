@@ -2,7 +2,31 @@
 // 模型：27 同款快慢覆写，判定换成「≠0」，收尾把 [slow..n) 填 0；或合格时直接 swap。
 //      注意：本题「改原数组、无返回」，与 27「返回新长度」不同。
 var moveZeroes = function (nums) {
-  // TODO 在这里写（覆写版 / 交换版二选一，另一种口述一遍即可）
+  // ------------- 复写版 ----------------
+  // let slow = 0;
+  // let fast = 0;
+  // while (fast < nums.length) {
+  //   if (nums[fast] !== 0) {
+  //     nums[slow++] = nums[fast];
+  //   }
+  //   fast++;
+  // }
+  // while (slow < nums.length) {
+  //   nums[slow++] = 0;
+  // }
+  // return nums;
+
+  // ------------- 交换版 ----------------
+  let slow = 0;
+  let fast = 0;
+  while (fast < nums.length) {
+    if (nums[fast] !== 0) {
+      [nums[slow], nums[fast]] = [nums[fast], nums[slow]];
+      slow++;
+    }
+    fast++;
+  }
+  return nums;
 };
 
 // ---------- 本地测试（提交力扣时只复制上面的 moveZeroes 函数）----------
