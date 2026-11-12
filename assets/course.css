@@ -160,6 +160,30 @@ code, .mono {
 
 footer { color: var(--ink-soft); font-size: 0.82rem; margin-top: 2.5rem; }
 
+/* ---- 模拟器预设按钮选中态（sim.js 配套） ---- */
+.btn.active { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.btn.active:hover { background: var(--ink); color: var(--paper); }
+
+/* ---- 题面折叠块（problem statement） ---- */
+details.problem {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 0.5rem 1rem 0.7rem;
+  margin: 0.9rem 0;
+  background: #fff;
+}
+details.problem summary { cursor: pointer; font-weight: 700; color: var(--accent); }
+details.problem summary:hover { text-decoration: underline; }
+details.problem pre {
+  background: var(--code-bg);
+  padding: 0.55rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  overflow-x: auto;
+  font-family: var(--mono);
+}
+details.problem p { font-size: 0.95rem; }
+
 /* ---- 数组可视化 cells（组件 #3：二分/双指针/滑窗等课复用） ---- */
 .cells { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0; }
 .cell { width: 3.1rem; text-align: center; }

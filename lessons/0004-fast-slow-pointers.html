@@ -142,6 +142,26 @@
     提交<a href="https://leetcode.cn/problems/move-zeroes/">力扣 283</a>——
     覆写版、交换版选一种，另一种口述一遍即可。</li>
   </ul>
+  <details class="problem">
+    <summary>📋 完整题面 · 27 移除元素（Easy）</summary>
+    <p>给你一个数组 <code>nums</code> 和一个值 <code>val</code>，你需要<strong>原地</strong>移除所有数值等于
+    <code>val</code> 的元素，并返回移除后数组的新长度。<strong>不要使用额外的数组空间</strong>，
+    必须仅使用 O(1) 额外空间并原地修改输入数组。元素的顺序可以改变。你不需要考虑数组中超出新长度后面的元素。</p>
+    <pre>示例 1：输入 nums = [3,2,2,3], val = 3
+      输出 2，nums 前 2 个元素为 [2,2]（之后的内容随意）
+示例 2：输入 nums = [0,1,2,2,3,0,4,2], val = 2
+      输出 5，nums 前 5 个元素为 0,1,4,0,3（任意顺序均可）</pre>
+    <p>提示：0 ≤ nums.length ≤ 100；0 ≤ nums[i] ≤ 50；0 ≤ val ≤ 100。</p>
+  </details>
+  <details class="problem">
+    <summary>📋 完整题面 · 283 移动零（Easy）</summary>
+    <p>给定一个数组 <code>nums</code>，编写一个函数将所有 <code>0</code> 移动到数组的末尾，
+    <strong>同时保持非零元素的相对顺序</strong>。请注意，必须<strong>在不复制数组的情况下原地对数组进行操作</strong>。</p>
+    <pre>示例 1：输入 nums = [0,1,0,3,12]  → 输出 [1,3,12,0,0]
+示例 2：输入 nums = [0]            → 输出 [0]</pre>
+    <p>提示：1 ≤ nums.length ≤ 10⁴；-2³¹ ≤ nums[i] ≤ 2³¹ - 1。
+    进阶：能尽量减少操作的次数吗？</p>
+  </details>
   <p><strong>复习提醒</strong>：34 / 33 已通过 D+1，下次 <strong>D+3（11-14）</strong>；
   33 那次按「两分支 + r = mid - 1」版本写（见 review 文档）。</p>
 </div>
@@ -163,6 +183,7 @@
   完成实战后请在 <a href="../algo-tracker/进度表.md">进度表</a> 打卡。</p>
 </footer>
 
+<script src="../assets/sim.js"></script>
 <script src="../assets/quiz.js"></script>
 <script>
 (function () {
@@ -276,9 +297,7 @@
     invEl.textContent = "已重置。选一个场景。（绿格 = 已保留 [0..slow)，灰格 = 已弃 [slow..fast)）";
   });
 
-  Array.prototype.slice.call(document.querySelectorAll(".tgt")).forEach(function (b) {
-    b.addEventListener("click", function () { start(parseInt(b.getAttribute("data-m"), 10)); });
-  });
+  simPresets(document, function (b) { start(parseInt(b.getAttribute("data-m"), 10)); });
 })();
 </script>
 </main>

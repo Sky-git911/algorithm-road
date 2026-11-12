@@ -146,6 +146,31 @@
     提交<a href="https://leetcode.cn/problems/search-in-rotated-sorted-array/">力扣 33</a>——
     草稿上先把四行决策表默写出来再写代码。</li>
   </ul>
+  <details class="problem">
+    <summary>📋 完整题面 · 153 寻找旋转排序数组中的最小值（Medium）</summary>
+    <p>已知一个长度为 <code>n</code> 的数组，预先按照升序排列，经由 <strong>1 到 n 次旋转</strong>后，得到输入数组。
+    例如原数组 <code>nums = [0,1,2,4,5,6,7]</code> 旋转 4 次可得 <code>[4,5,6,7,0,1,2]</code>；旋转 7 次则还原。
+    注意，数组 <code>[a[0], a[1], …, a[n-1]]</code> 旋转一次的结果是 <code>[a[n-1], a[0], a[1], …, a[n-2]]</code>。
+    给你一个元素值<strong>互不相同</strong>的数组 <code>nums</code>，它原来是一个升序数组并进行了上述旋转。
+    请找出并返回数组中的<strong>最小值</strong>。<strong>必须设计 O(log n) 的算法。</strong></p>
+    <pre>示例 1：nums = [3,4,5,1,2]       → 1
+示例 2：nums = [4,5,6,7,0,1,2]  → 0
+示例 3：nums = [11,13,15,17]    → 11（未旋转）</pre>
+    <p>提示：1 ≤ n ≤ 5000；-5000 ≤ nums[i] ≤ 5000；所有整数互不相同；原升序数组经 1 至 n 次旋转。</p>
+  </details>
+  <details class="problem">
+    <summary>📋 完整题面 · 33 搜索旋转排序数组（Medium）</summary>
+    <p>整数数组 <code>nums</code> 按升序排列，数组中的值<strong>互不相同</strong>。在传递给函数之前，
+    <code>nums</code> 在预先未知的某个下标 <code>k（0 ≤ k &lt; nums.length）</code>上进行了旋转，
+    使数组变为 <code>[nums[k], nums[k+1], …, nums[n-1], nums[0], …, nums[k-1]]</code>。
+    例如 <code>[0,1,2,4,5,6,7]</code> 在下标 3 处旋转后变为 <code>[4,5,6,7,0,1,2]</code>。
+    给你<strong>旋转后</strong>的数组 <code>nums</code> 和一个整数 <code>target</code>，
+    如果存在则返回其下标，否则返回 <code>-1</code>。<strong>必须设计 O(log n) 的算法。</strong></p>
+    <pre>示例 1：nums = [4,5,6,7,0,1,2], target = 0  → 4
+示例 2：nums = [4,5,6,7,0,1,2], target = 3  → -1</pre>
+    <p>提示：1 ≤ nums.length ≤ 5000；-10⁴ ≤ nums[i] ≤ 10⁴；每个值都独一无二；
+    数据保证 nums 在预先未知的下标上旋转过；-10⁴ ≤ target ≤ 10⁴。</p>
+  </details>
   <p>别忘了：<strong>34 明天 D+1 盲写</strong>（今天卡壳的题，用自己的话把破题点先写进错题本）。</p>
 </div>
 
@@ -167,6 +192,7 @@
   完成实战后请在 <a href="../algo-tracker/进度表.md">进度表</a> 打卡。</p>
 </footer>
 
+<script src="../assets/sim.js"></script>
 <script src="../assets/quiz.js"></script>
 <script>
 (function () {
@@ -257,9 +283,7 @@
     invEl.textContent = "已重置。选一种数组形态。（灰格 = 已确认不是最小值）";
   });
 
-  Array.prototype.slice.call(document.querySelectorAll(".tgt")).forEach(function (b) {
-    b.addEventListener("click", function () { start(parseInt(b.getAttribute("data-a"), 10)); });
-  });
+  simPresets(document, function (b) { start(parseInt(b.getAttribute("data-a"), 10)); });
 })();
 </script>
 </main>

@@ -149,6 +149,17 @@ a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含�
 <h2>实战</h2>
 <div class="task">
   <p><strong>LeetCode 704 · 二分查找</strong>（<a href="https://leetcode.cn/problems/binary-search/">题目链接</a>）——JS。</p>
+  <details class="problem">
+    <summary>📋 完整题面 · 704 二分查找（Easy）</summary>
+    <p>给定一个 <code>n</code> 个元素有序的（升序）整型数组 <code>nums</code> 和一个目标值 <code>target</code>，
+    写一个函数搜索 <code>nums</code> 中的 <code>target</code>，如果目标值存在返回下标，否则返回 <code>-1</code>。</p>
+    <pre>示例 1：输入 nums = [-1,0,3,5,9,12], target = 9
+      输出 4   （9 出现在 nums 中且下标为 4）
+示例 2：输入 nums = [-1,0,3,5,9,12], target = 2
+      输出 -1  （2 不存在）</pre>
+    <p>提示：1 ≤ n ≤ 10⁴；-9999 ≤ nums[i], target ≤ 9999；nums 已按升序排列。
+    进阶：设计并实现 O(log n) 的解法。</p>
+  </details>
   <p>流程照你的 SOP：25 分钟独立思考；写之前先决定合同 A 还是 B（写在脚手架注释第一行）。
   <strong>本地优先</strong>：在 <a href="../practice/lc0704-binary-search.js">practice/lc0704-binary-search.js</a> 里写，
   <code>node practice/lc0704-binary-search.js</code> 本地测试全过后，只复制 search 函数去力扣提交；
@@ -179,6 +190,7 @@ a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含�
   完成实战后请在 <a href="../algo-tracker/进度表.md">进度表</a> 打卡（2026-11-09 起）。</p>
 </footer>
 
+<script src="../assets/sim.js"></script>
 <script src="../assets/quiz.js"></script>
 <script>
 (function () {
@@ -191,7 +203,6 @@ a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含�
   var resEl = document.getElementById("simres");
   var stepBtn = document.getElementById("stepbtn");
   var resetBtn = document.getElementById("resetbtn");
-  var tgtBtns = Array.prototype.slice.call(document.querySelectorAll(".tgt"));
   var convBtns = Array.prototype.slice.call(document.querySelectorAll('input[name=conv]'));
   var S = null; // {t, closed, steps, found, i}
 
@@ -280,9 +291,7 @@ a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含�
     invEl.textContent = "已重置。选一个目标单号开始。";
   });
 
-  tgtBtns.forEach(function (b) {
-    b.addEventListener("click", function () { start(parseInt(b.textContent, 10)); });
-  });
+  simPresets(document, function (b) { start(parseInt(b.textContent, 10)); });
   convBtns.forEach(function (b) {
     b.addEventListener("change", function () { if (S) start(S.t); });
   });

@@ -144,6 +144,16 @@
 <div class="task">
   <p><strong>LeetCode 35 · 搜索插入位置</strong>（今天）——
   脚手架：<a href="../practice/lc0035-search-insert-position.js">practice/lc0035-search-insert-position.js</a>。</p>
+  <details class="problem">
+    <summary>📋 完整题面 · 35 搜索插入位置（Easy）</summary>
+    <p>给定一个排序数组和一个目标值，在数组中找到目标值，并返回其索引。如果目标值不存在于数组中，
+    返回它将会被按顺序插入的位置。<strong>请必须使用时间复杂度为 O(log n) 的算法。</strong></p>
+    <pre>示例 1：nums = [1,3,5,6], target = 5  → 2
+示例 2：nums = [1,3,5,6], target = 2  → 1
+示例 3：nums = [1,3,5,6], target = 7  → 4
+示例 4：nums = [1,3,5,6], target = 0  → 0</pre>
+    <p>提示：1 ≤ nums.length ≤ 10⁴；-10⁴ ≤ nums[i] ≤ 10⁴；nums 为无重复元素的升序数组。</p>
+  </details>
   <p>流程与 704 相同：注释第一行写下「这题 = lower_bound，合同 B」→ 本地写 →
   <code>node practice/lc0035-search-insert-position.js</code> 全过 → 只复制函数去
   <a href="https://leetcode.cn/problems/search-insert-position/">力扣 35</a> 提交 → 口述复杂度（O(log n) / O(1)）。</p>
@@ -153,6 +163,16 @@
     左边界 = lb(t)，右边界 = lb(t+1) - 1，存在性检查一行：<code>lb &lt; n &amp;&amp; nums[lb] === t</code>——两次 lower_bound 组合，不写第二种循环；</li>
     <li>一次通过且 ≤20 分钟 → 只打卡；卡壳 / 看题解 → 错题本 + 明天盲写重做。</li>
   </ul>
+  <details class="problem">
+    <summary>📋 完整题面 · 34 在排序数组中查找元素的第一个和最后一个位置（Medium）</summary>
+    <p>给你一个按照<strong>非递减顺序</strong>排列的整数数组 <code>nums</code> 和一个目标值 <code>target</code>，
+    请你找出给定目标值在数组中的开始位置和结束位置。如果数组中不存在目标值，返回 <code>[-1, -1]</code>。
+    <strong>你必须设计并实现时间复杂度为 O(log n) 的算法解决此问题。</strong></p>
+    <pre>示例 1：nums = [5,7,7,8,8,10], target = 8  → [3,4]
+示例 2：nums = [5,7,7,8,8,10], target = 6  → [-1,-1]
+示例 3：nums = [], target = 0               → [-1,-1]</pre>
+    <p>提示：0 ≤ nums.length ≤ 10⁵；-10⁹ ≤ nums[i] ≤ 10⁹；nums 是非递减排序的数组。</p>
+  </details>
 </div>
 
 <h2>延伸</h2>
@@ -174,6 +194,7 @@
   完成实战后请在 <a href="../algo-tracker/进度表.md">进度表</a> 打卡。</p>
 </footer>
 
+<script src="../assets/sim.js"></script>
 <script src="../assets/quiz.js"></script>
 <script>
 (function () {
@@ -266,9 +287,7 @@
     invEl.textContent = "已重置。选一个目标 t。（灰格 = 已确认 < t，橙格 = 已确认 ≥ t）";
   });
 
-  Array.prototype.slice.call(document.querySelectorAll(".tgt")).forEach(function (b) {
-    b.addEventListener("click", function () { start(parseInt(b.textContent, 10)); });
-  });
+  simPresets(document, function (b) { start(parseInt(b.textContent, 10)); });
 })();
 </script>
 </main>
