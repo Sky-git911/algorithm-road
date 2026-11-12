@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0004 · 快慢指针：原地造刀痕</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+
+<p class="kicker">阶段 1 · 数组 · 课程 0004 · 第 2 周</p>
+<h1>快慢指针：原地造刀痕</h1>
+<p class="meta">约 25 分钟 · 前置：0001–0003（二分三部曲）·
+实战：LeetCode 27（主线）+ 283（补充）· 速查卡：本课新增节</p>
+
+<h2>为什么数组「删」元素是个问题</h2>
+<p>数组在内存里是连续的，<strong>没有「真删」这回事</strong>——只能覆盖 + 约定「前 k 个有效」。
+朴素做法每删一个就把后面整体前移，O(n²)；快慢指针<strong>一趟 O(n)</strong> 解决，
+且只花 O(1) 空间。这也是你第一次写「原地算法」（in-place）：不新建数组，在原数组上手术。</p>
+
+<h2>模型：读指针探路，写指针站位</h2>
+<table>
+  <thead><tr><th>角色</th><th>走法</th><th>职责</th></tr></thead>
+  <tbody>
+    <tr><td><code>fast</code>（读）</td><td><strong>每轮必走</strong></td><td>探路、判定当前元素合不合格</td></tr>
+    <tr><td><code>slow</code>（写）</td><td><strong>拿到合格元素才走</strong></td><td>标记「已保留前缀」的末端</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th>判定</th><th>动作</th></tr></thead>
+  <tbody>
+    <tr><td><code>a[fast]</code> 不合格</td><td><code>fast++</code>（slow 不动）</td></tr>
+    <tr><td><code>a[fast]</code> 合格</td><td><code>a[slow++] = a[fast++]</code>（写入并双走）</td></tr>
+    <tr><td>fast 越界（到 n）</td><td>终止，<code>[0..slow)</code> 即结果</td></tr>
+  </tbody>
+</table>
+
+<div class="keyidea">不变量（第三次登场）：每一轮开始时，<strong>[0..slow) 全是合格元素（保持原相对顺序），
+[slow..fast) 全是已判定的不合格元素</strong>。slow 就是保留区与弃区的刀痕——
+0001 找存在、0002 找刀痕、0004 <strong>原地造刀痕</strong>。判定条件一换，题目就换：27 判「≠val」，283 判「≠0」。</div>
+
+<div class="pitfall">三个高频坑：
+① 返回值——27 返回 <code>slow</code>（合格前缀的长度），不是 n 也不是 slow - 1；
+② 尾部垃圾不用清——<code>[slow..n)</code> 里残留旧值是允许的，题目只看前缀；
+③ 283 是「改原数组、无返回」——和 27 的「返回新长度」是两种不同的要求，读题先分辨。</div>
+
+<p><strong>283 两种写法</strong>（同一模型的两件外衣）：
+覆写版——非零元素照 27 压到前缀，最后把 <code>[slow..n)</code> 填 0；
+交换版——合格时 <code>[a[slow], a[fast]] = [a[fast], a[slow]]</code> 并 slow++，0 被自动换到后面。
+两种都保持非零相对顺序，覆写版更贴本课模型，交换版少一趟填零。</p>
+
+<h2>亲手走一遍：去留流水线</h2>
+<p>两个预设：27 场景（val=3）和 283 场景。每步先预测：这个元素保还是弃？slow 动不动？
+注意观察「写入」发生的瞬间——数组内容在原地址上被改写。</p>
+
+<div class="sim no-print">
+  <div class="sim-controls">
+    <span>场景：
+      <button class="btn tgt" type="button" data-m="0">27 移除元素</button>
+      <button class="btn tgt" type="button" data-m="1">283 移动零</button>
+    </span>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="resetbtn">重置</button>
+  </div>
+  <div class="cells" id="cells"></div>
+  <div class="sim-note" id="invariant">先选一个场景。（绿格 = 已保留前缀 [0..slow)，灰格 = 已弃 [slow..fast)）</div>
+  <ol class="sim-log" id="simlog"></ol>
+  <p class="sim-result" id="simres"></p>
+</div>
+
+<h2>检查站：五道题</h2>
+
+<div class="quiz" data-quiz>
+<script type="application/json">
+{
+  "questions": [
+    {
+      "q": "快慢指针中，slow 的移动规则是？",
+      "options": [
+        { "t": "每一轮都必须走", "why": "错。那是 fast 的规则——读指针必走，写指针条件走，两者职责不同。" },
+        { "t": "合格才向前移动", "why": "对。slow 只在 a[fast] 合格、执行写入后才 +1，否则原地待命保住刀痕。" },
+        { "t": "始终停在原点处", "why": "错。slow 不动就没有前缀增长，最后结果长度永远是 0。" },
+        { "t": "先走完再回头看", "why": "错。快慢指针是一趟同步算法，没有回头补写的阶段（283 的尾部填零除外，那是收尾动作）。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "不变量：每一轮开始时 [0..slow) 内是？",
+      "options": [
+        { "t": "全部合格的元素", "why": "对。且保持原相对顺序——每次写入都发生在 slow 处，天然保序。" },
+        { "t": "全部待定的元素", "why": "错。待定的是 fast 右边的 [fast..n)，slow 左边早已判定完毕。" },
+        { "t": "已经弃掉的元素", "why": "错。弃区是 [slow..fast)，是两个指针之间的夹层。" },
+        { "t": "原数组的后一半", "why": "错。[0..slow) 从下标 0 开始，是前缀，与后一半无关。" }
+      ],
+      "answer": 0
+    },
+    {
+      "q": "27 移除元素的返回值应该是？",
+      "options": [
+        { "t": "原始数组的长度", "why": "错。元素被「删」了，返回原长度等于没删。" },
+        { "t": "最后一个的下标", "why": "错。返回的不是某个位置，是合格前缀的规模。" },
+        { "t": "合格前缀的长度", "why": "对。即 slow——写入指针的最终值，前 k 个元素就是答案。" },
+        { "t": "被删除元素的个数", "why": "错。那是 n - slow。返回它，调用方会把垃圾区当结果读。" }
+      ],
+      "answer": 2
+    },
+    {
+      "q": "283 移动零与 27 的关系是？",
+      "options": [
+        { "t": "完全不同的思路", "why": "错。两者共用同一套读写分工与同一不变量，只差判定条件。" },
+        { "t": "同一模型换判定", "why": "对。27 判「≠val」保留，283 判「≠0」保留；覆写后 283 多一步尾部填零（或用交换版省掉）。" },
+        { "t": "必须用递归来做", "why": "错。两题都是标准的迭代双指针，递归反而费空间。" },
+        { "t": "只能排序后移动", "why": "错。排序会破坏非零元素的相对顺序，恰好违反题目要求。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "对比「每删一个整体前移」的朴素法，快慢指针的复杂度是？",
+      "options": [
+        { "t": "平方级别可接受", "why": "错。那就是朴素法本身——每个删除触发一次 O(n) 搬移，总量 O(n²)。" },
+        { "t": "常数时间就搞定", "why": "错。每个元素至少要看一眼，Ω(n) 是下界，做不到 O(1)。" },
+        { "t": "对数级别就够了", "why": "错。不排序、无序可二分，必须线性扫描一遍。" },
+        { "t": "一趟线性就搞定", "why": "对。O(n) 时间 + O(1) 空间，fast 扫一遍、slow 原地写，这是原地算法的标杆形态。" }
+      ],
+      "answer": 3
+    }
+  ]
+}
+</script>
+</div>
+
+<h2>实战</h2>
+<div class="task">
+  <p>今天两道，脚手架已备（本地用例会连「前缀内容/原数组终态」一起校验，比只看返回值严）：</p>
+  <ul>
+    <li><strong>27 移除元素</strong>（主线，先做）：
+    <a href="../practice/lc0027-remove-element.js">lc0027</a> → node 全过 →
+    提交<a href="https://leetcode.cn/problems/remove-element/">力扣 27</a>；</li>
+    <li><strong>283 移动零</strong>（补充，Hot100 双指针组）：
+    <a href="../practice/lc0283-move-zeroes.js">lc0283</a> →
+    提交<a href="https://leetcode.cn/problems/move-zeroes/">力扣 283</a>——
+    覆写版、交换版选一种，另一种口述一遍即可。</li>
+  </ul>
+  <p><strong>复习提醒</strong>：34 / 33 已通过 D+1，下次 <strong>D+3（11-14）</strong>；
+  33 那次按「两分支 + r = mid - 1」版本写（见 review 文档）。</p>
+</div>
+
+<h2>延伸</h2>
+<p><strong>Primary source</strong>：<a href="https://programmercarl.com/algo/array/">代码随想录 · 数组章 · 27 移除元素</a>——
+随想录强调的正是「fast/slow 各自的语义」，与本课决策表对照着读。</p>
+
+<div class="keyidea">老规矩：模拟器哪一步看不懂、quiz 哪个选项想不通、283 两种写法纠结选哪个——
+直接回来问我。另外今天起你写过两个专题了，周日复盘见（11-15，我会出一组跨课混合 quiz）。</div>
+
+<nav class="lesson-nav">
+  <a href="0003-rotated-array-binary-search.html">← 0003 旋转数组二分</a>
+  <span class="disabled">下一课 0005 · 对撞指针（未解锁）</span>
+</nav>
+
+<footer>
+  <p>algorithm-road · 阶段 1 · 数组 · 2026-11-12 ·
+  完成实战后请在 <a href="../algo-tracker/进度表.md">进度表</a> 打卡。</p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+(function () {
+  "use strict";
+  var PRESETS = [
+    { name: "27 场景（val=3）", arr: [3, 2, 2, 3, 4, 3, 5], mode: 27 },
+    { name: "283 场景", arr: [0, 1, 0, 3, 12], mode: 283 },
+  ];
+  var cellsEl = document.getElementById("cells");
+  var invEl = document.getElementById("invariant");
+  var logEl = document.getElementById("simlog");
+  var resEl = document.getElementById("simres");
+  var stepBtn = document.getElementById("stepbtn");
+  var resetBtn = document.getElementById("resetbtn");
+  var S = null;
+
+  function plan(p) {
+    var a = p.arr.slice(), n = a.length, steps = [];
+    var slow = 0;
+    for (var fast = 0; fast < n; fast++) {
+      var keep = p.mode === 27 ? a[fast] !== 3 : a[fast] !== 0;
+      var st = { arr: a.slice(), fast: fast, slow: slow, write: -1 };
+      if (keep) {
+        st.write = slow;
+        st.note = "a[fast]=" + a[fast] + " 合格 → 写入 a[" + slow + "] ← " + a[fast] + "，slow、fast 双走";
+        a[slow] = a[fast];
+        slow++;
+        st.afterArr = a.slice();
+      } else {
+        st.note = "a[fast]=" + a[fast] + " 不合格 → 只 fast++，slow 原地待命";
+        st.afterArr = a.slice();
+      }
+      steps.push(st);
+    }
+    if (p.mode === 283) {
+      var fillFrom = slow;
+      for (var z = slow; z < n; z++) {
+        var st2 = { arr: a.slice(), fast: n, slow: z, write: z };
+        a[z] = 0;
+        st2.afterArr = a.slice();
+        st2.note = "收尾：尾部填 0 → a[" + z + "] ← 0";
+        steps.push(st2);
+      }
+      steps.finalNote = "原数组终态 " + JSON.stringify(a) + "（无返回值）";
+      steps.final = a;
+    } else {
+      steps.finalNote = "返回 slow = " + slow + "，合格前缀 " + JSON.stringify(a.slice(0, slow)) + "（尾部是垃圾区，允许）";
+      steps.final = a;
+      steps.finalSlow = slow;
+    }
+    return steps;
+  }
+
+  function start(idx) {
+    S = { p: PRESETS[idx], steps: plan(PRESETS[idx]), i: 0 };
+    logEl.innerHTML = ""; resEl.textContent = "";
+    stepBtn.disabled = false;
+    render();
+  }
+
+  function done() { return S.i >= S.steps.length; }
+
+  function render() {
+    if (!S) { cellsEl.innerHTML = ""; return; }
+    var st = S.steps[S.i]; // 即将执行的这一步（展示其快照）
+    var arr, fast, slow;
+    if (!st) {
+      var last = S.steps[S.steps.length - 1];
+      arr = last.afterArr; fast = last.fast; slow = last.slow;
+    } else {
+      arr = st.arr; fast = st.fast; slow = st.slow;
+    }
+    var n = S.p.arr.length;
+    var html = "";
+    for (var i = 0; i < n; i++) {
+      var cls = "cell";
+      if (i < slow) cls += " gez";
+      else if (i < fast) cls += " ltz";
+      var mk = "";
+      if (st) {
+        if (i === slow) mk = "s";
+        if (i === fast) mk += (mk ? " f" : "f");
+      } else if (S.p.mode === 27 && i === S.steps.finalSlow) mk = "分";
+      html += '<div class="' + cls + '"><div class="v">' + arr[i] + '</div><div class="mk">' + mk + '</div></div>';
+    }
+    cellsEl.innerHTML = html;
+    if (st) {
+      invEl.innerHTML = (st.fast >= n)
+        ? "收尾阶段：非零前缀已就位，正在把尾部逐格补 0。"
+        : "不变量：[0.." + slow + ") 已保留合格，[" + slow + ".." + fast + ") 已弃，待判从 " + fast + " 起。先预测：保还是弃？";
+    } else {
+      invEl.textContent = S.steps.finalNote;
+      resEl.textContent = S.p.mode === 27 ? "27 返回 " + S.steps.finalSlow : "283 完成";
+    }
+    stepBtn.disabled = done();
+  }
+
+  stepBtn.addEventListener("click", function () {
+    if (!S || done()) return;
+    var st = S.steps[S.i];
+    S.i++;
+    var li = document.createElement("li");
+    li.textContent = st.note;
+    logEl.appendChild(li);
+    render();
+  });
+
+  resetBtn.addEventListener("click", function () {
+    S = null; stepBtn.disabled = true;
+    cellsEl.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
+    invEl.textContent = "已重置。选一个场景。（绿格 = 已保留 [0..slow)，灰格 = 已弃 [slow..fast)）";
+  });
+
+  Array.prototype.slice.call(document.querySelectorAll(".tgt")).forEach(function (b) {
+    b.addEventListener("click", function () { start(parseInt(b.getAttribute("data-m"), 10)); });
+  });
+})();
+</script>
+</main>
+</body>
+</html>
