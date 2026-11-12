@@ -5,19 +5,19 @@ var search = function (nums, target) {
   let l = 0;
   let r = nums.length - 1;
   while (l <= r) {
-    const mid = ~~((l + r) / 2);
+    const mid = Math.floor((l + r) / 2);
     if (nums[mid] === target) return mid;
     if (nums[mid] > nums[r]) {
-      if (target > nums[mid] || (target < nums[mid] && target <= nums[r])) {
+      if (target > nums[mid] || target <= nums[r]) {
         l = mid + 1;
-      } else if (target < nums[mid] && target > nums[r]) {
+      } else {
         r = mid;
       }
     } else if (nums[mid] < nums[r]) {
-      if (target > nums[r] || target < nums[mid]) {
-        r = mid;
-      } else if (target <= nums[r]) {
+      if (target > nums[mid] && target <= nums[r]) {
         l = mid + 1;
+      } else {
+        r = mid;
       }
     } else {
       break;

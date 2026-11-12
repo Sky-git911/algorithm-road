@@ -1,41 +1,37 @@
 // 题目：34 在排序数组中查找元素的第一个和最后一个位置 https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/
-// 模型：两次 lower_bound 组合——左边界 = lb(target)，右边界 = lb(target + 1) - 1；
-//      存在性检查：lb < n && nums[lb] === target。全程只写一种循环（合同 B）。
+// 模型：合同 A 镜像双循环——两轮存在型二分，命中记录后继续压：
+//      左边界：命中时记 mid、r = mid - 1 继续向左；右边界：命中时记 mid、l = mid + 1 继续向右。
 var searchRange = function (nums, target) {
   // TODO 在这里写。建议：先在草稿上把 lower_bound 写成独立一步，再组合两次调用
   let l = 0;
-  let r = nums.length;
-  let mid = 0;
+  let r = nums.length - 1;
   let resL = -1;
   let resR = -1;
-  while (l < r) {
-    const val = nums[mid];
-    if (val > target) {
-      r = mid;
-    } else if (val < target) {
+  while (l <= r) {
+    const mid = Math.floor((l + r) / 2);
+    if (nums[mid] > target) {
+      r = mid - 1;
+    } else if (nums[mid] < target) {
       l = mid + 1;
     } else {
+      r = mid - 1;
       resL = mid;
-      r = mid;
     }
-    mid = ~~((l + r) / 2);
   }
 
   l = 0;
   r = nums.length - 1;
   while (l <= r) {
-    mid = ~~((l + r) / 2);
-    const val = nums[mid];
-    if (val > target) {
+    const mid = Math.floor((l + r) / 2);
+    if (nums[mid] > target) {
       r = mid - 1;
-    } else if (val < target) {
+    } else if (nums[mid] < target) {
       l = mid + 1;
     } else {
       l = mid + 1;
       resR = mid;
     }
   }
-
   return [resL, resR];
 };
 
