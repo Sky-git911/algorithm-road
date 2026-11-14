@@ -2,7 +2,17 @@
 // 模型：对撞指针 + V 型逆序填（课程 0005）——最大值必在两端，res[k--] 从尾部填
 // 用途：2026-11-13 已 AC；本文件供 D 周期盲写复习（清空函数体重写）
 var sortedSquares = function (nums) {
-  // TODO 盲写时从这里开始
+  let l = 0;
+  let r = nums.length - 1;
+  let pos = r;
+  const res = new Array(r);
+  while (l <= r) {
+    const left = Math.pow(nums[l], 2);
+    const right = Math.pow(nums[r], 2);
+    res[pos--] = Math.max(left, right);
+    left <= right ? r-- : l++;
+  }
+  return res;
 };
 
 // ---------- 本地测试（提交力扣时只复制上面的 sortedSquares 函数）----------
@@ -18,7 +28,9 @@ const CASES = [
 
 let pass = 0;
 for (const c of CASES) {
-  const got = sortedSquares(...c.in.map((x) => (Array.isArray(x) ? x.slice() : x)));
+  const got = sortedSquares(
+    ...c.in.map((x) => (Array.isArray(x) ? x.slice() : x)),
+  );
   const ok = JSON.stringify(got) === JSON.stringify(c.want);
   if (ok) pass++;
   console.log(

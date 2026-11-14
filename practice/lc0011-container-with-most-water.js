@@ -3,7 +3,17 @@
 //      移长板面积必不增（min 被短板锁死 + 宽变小），被移出的端是「证明过不可能更优」才扔的
 // 用途：2026-11-13 已 AC（先 O(n²) 超时后转对撞）；本文件为 **2026-11-14 D+1 盲写**而建
 var maxArea = function (height) {
-  // TODO 盲写从这里开始（先在注释里写一句排除证明，再动笔）
+  let l = 0;
+  let r = height.length - 1;
+  let best = 0;
+  while (l <= r) {
+    const left = height[l];
+    const right = height[r];
+    const area = (r - l) * Math.min(left, right);
+    best = Math.max(best, area);
+    left <= right ? l++ : r--;
+  }
+  return best;
 };
 
 // ---------- 本地测试（提交力扣时只复制上面的 maxArea 函数）----------
