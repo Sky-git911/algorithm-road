@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0005 · 对撞指针：确定地排除一端</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+
+<p class="kicker">阶段 1 · 数组 · 课程 0005 · 第 2 周</p>
+<h1>对撞指针：确定地排除一端</h1>
+<p class="meta">定位：<strong>复盘课</strong>（977 / 11 已于 2026-11-13 提前双 AC）· 约 20 分钟 ·
+前置：<a href="0004-fast-slow-pointers.html">0004 快慢指针</a> · 本课使命：把 11 的卡点钉死 + 留档 D+21 复习</p>
+
+<h2>模型：两端各持一指针，每轮扔掉一端</h2>
+<table>
+  <thead><tr><th>决策点</th><th>规则</th></tr></thead>
+  <tbody>
+    <tr><td>初始化</td><td><code>l = 0, r = n - 1</code>，两端向中间相向移动</td></tr>
+    <tr><td>每轮判定</td><td>比较两端的相关量（977 比平方、11 比高度），<strong>移动「较差」的一端</strong></td></tr>
+    <tr><td>移动的合法性</td><td>每次移动 = 先证明「被移出的一端不可能参与更优解」</td></tr>
+    <tr><td>终止</td><td>两指针相遇（977 填满结果数组、11 扫完所有候选状态）</td></tr>
+  </tbody>
+</table>
+
+<div class="keyidea">灵魂：对撞指针每一步都在做和二分同宗的事——<strong>确定地排除</strong>。
+二分靠 mid 判定一次扔一半，对撞靠端点判定一次扔一格。
+指针三件套你已经集齐两件：快慢（同向·读写分工）、对撞（相向·排除一端），下一件是滑窗（同向·扩张收缩）。</div>
+
+<h2>977：V 型数组，最大值必在两端</h2>
+<p>升序数组含负数，平方后呈 <strong>V 型</strong>（两头大、谷底小）。唯一敢用的性质是：
+<strong>未处理区间的最大值必然出现在两端</strong>（最小值在谷底、位置不定，不敢用）。
+所以结果数组<strong>从尾部逆序填</strong>：每轮取两端平方较大者放入 <code>res[k--]</code>。</p>
+<div class="pitfall">两个坑：① 逆序填——正序需要「最小值在哪」这个你不知道的信息；
+② JS 结果数组用 <code>new Array(n)</code> 预分配按序写入，别 <code>push</code> 更别 spread 大数组（O(n) 拷贝）。</div>
+
+<h2>11 盛水：为什么移短板是安全的（你卡住的地方）</h2>
+<p>面积 = <code>min(h[l], h[r]) × (r - l)</code>。你的初始想法「每项都要与其他项各比一次」
+其实是对的做法——O(n²) 枚举确实不漏；超时说明需要 <strong>剪掉绝大部分比较</strong>，剪的依据就是排除证明：</p>
+<table>
+  <thead><tr><th>选择</th><th>后果</th></tr></thead>
+  <tbody>
+    <tr><td>移长板</td><td>新的高仍 ≤ 原短板（min 被短板锁死），宽还变小一格 → <strong>面积必不增</strong>，这一轮白扔</td></tr>
+    <tr><td>移短板</td><td>宽变小一格，但高有机会变大 → <strong>有机会更优</strong></td></tr>
+  </tbody>
+</table>
+<div class="keyidea">所以移出短板不是「放弃了它配对的所有可能」，而是<strong>证明过它的所有可能都不超过已记录的 best</strong>——
+这正是你二分课的老朋友：「确定地排除」。枚举 n² 个状态里，被证明无用的状态一次扔掉一批，剩下的线性扫完。</div>
+
+<h2>亲手走一遍</h2>
+<p>两个场景。盛水场景<strong>每步先口头回答三件事</strong>：谁是短板？面积多少？移哪端、为什么安全？——这正是你 D+1 盲写前要长在肌肉里的东西。</p>
+
+<div class="sim no-print">
+  <div class="sim-controls">
+    <span>场景：
+      <button class="btn tgt" type="button" data-m="0">977 平方排序</button>
+      <button class="btn tgt" type="button" data-m="1">11 盛最多水</button>
+    </span>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="resetbtn">重置</button>
+  </div>
+  <div id="wrap977">
+    <div class="cells" id="cells-src"></div>
+    <p class="mono" style="font-size:0.8rem;color:var(--ink-soft);margin:0.4rem 0 0;">↓ 结果数组（k 从尾部逆行）</p>
+    <div class="cells" id="cells-res"></div>
+  </div>
+  <div id="wrap11" style="display:none">
+    <div class="cells" id="cells-h"></div>
+  </div>
+  <div class="sim-note" id="invariant">先选一个场景。</div>
+  <ol class="sim-log" id="simlog"></ol>
+  <p class="sim-result" id="simres"></p>
+</div>
+
+<h2>检查站：五道题</h2>
+
+<div class="quiz" data-quiz>
+<script type="application/json">
+{
+  "questions": [
+    {
+      "q": "对撞指针每轮应该移动哪一端？",
+      "options": [
+        { "t": "移动较差的一端", "why": "对。「较差」由题目定义（平方小、高度矮），较差的一端已被证明不可能参与更优解，扔掉它。" },
+        { "t": "固定移动左端", "why": "错。固定一端就退化成单指针扫描，排除证明完全没用上，等于 O(n) 枚举单侧。" },
+        { "t": "固定移动右端", "why": "错。同上，方向反过来的单指针，没有任何排除收益。" },
+        { "t": "两端同时移动", "why": "错。一次扔两端无法保证被扔的两个都安全——总有一端可能是更优解的一部分。" }
+      ],
+      "answer": 0
+    },
+    {
+      "q": "11 题中为什么移动短板而不是长板？",
+      "options": [
+        { "t": "移短板必不会更优", "why": "错。方向反了：移短板宽变小但高有机会变大，正是「有机会更优」的那一侧。" },
+        { "t": "移长板必不会更优", "why": "对。新高度仍被原短板锁死（min 不变或更小）、宽度还少一格——面积单调不增，这轮白扔。这是本题唯一的论证核心。" },
+        { "t": "两端移动没有区别", "why": "错。有本质区别——一个必不增、一个有机会增；混着移会漏掉最优状态。" },
+        { "t": "随便移动都不影响", "why": "错。随机移可能把还「有机会更优」的状态扔掉，正确性直接不保。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "977 逆序填结果数组的原因是？",
+      "options": [
+        { "t": "负数全放前面", "why": "错。负数平方可能很大（-7²=49），结果开头恰恰可能是大值，这个说法方向就错了。" },
+        { "t": "结果要求降序", "why": "错。题目要求结果非递减（升序），不是降序。" },
+        { "t": "平方后呈V型", "why": "对。V 型下最大值必在两端、最小值位置不定——只能从「最大」这一头确定地取，所以从尾部逆序填。" },
+        { "t": "数组已经降序", "why": "错。原数组是非递减（升序）的，这个前提本身就写反了。" }
+      ],
+      "answer": 2
+    },
+    {
+      "q": "977 每轮写入结果数组的是？",
+      "options": [
+        { "t": "两端平方较小", "why": "错。较小者留给后面（它可能还不是最小），先填的应该是较大的。" },
+        { "t": "左端平方较大", "why": "错。固定取左端在纯正数数组会出错——正数数组最大恒在右端，必须两边比较。" },
+        { "t": "右端平方较小", "why": "错。既固定了端又取错了大小，两头都错。" },
+        { "t": "两端平方较大", "why": "对。较大者就是当前未处理区间的最大值，写进 res[k]，k 逆行。" }
+      ],
+      "answer": 3
+    },
+    {
+      "q": "对撞指针与二分共享的灵魂是？",
+      "options": [
+        { "t": "每次都减半范围", "why": "错。二分减半、对撞一次只扔一格——机制不同，共享的是更本质的东西。" },
+        { "t": "确定地排除一侧", "why": "对。二分靠 mid 判定排除半边，对撞靠端点论证排除一端——「确定地排除」是两家共同的命根。" },
+        { "t": "必须数组有序性", "why": "错。11 题的高度数组无序，对撞照样成立；有序只是某些题的前提不是模型的。" },
+        { "t": "总是移动左指针", "why": "错。对撞指针两头都动，移动谁由「较差」判定决定。" }
+      ],
+      "answer": 1
+    }
+  ]
+}
+</script>
+</div>
+
+<h2>实战状态与复习指引</h2>
+<div class="task">
+  <p><strong>977 / 11 均已于 2026-11-13 AC。</strong>本课的复盘动作：</p>
+  <ul>
+    <li>quiz 五题全对（重点 Q2、Q5——排除证明）；</li>
+    <li>盛水场景逐步走一遍，每步<strong>口头</strong>回答：谁是短板 / 面积多少 / 移哪端为什么安全；</li>
+    <li><strong>11 进错题本</strong>（卡点①，建议行见当日对话），今天 D+1 盲写；977 只打卡。</li>
+  </ul>
+  <details class="problem">
+    <summary>📋 完整题面 · 977 有序数组的平方（Easy）</summary>
+    <p>给你一个按<strong>非递减顺序</strong>排序的整数数组 <code>nums</code>，返回<strong>每个数字的平方</strong>组成的新数组，
+    要求也按非递减顺序排序。</p>
+    <pre>示例 1：nums = [-4,-1,0,3,10]   → [0,1,9,16,100]
+示例 2：nums = [-7,-3,2,3,11]  → [4,9,9,49,121]</pre>
+    <p>提示：1 ≤ nums.length ≤ 10⁴；-10⁴ ≤ nums[i] ≤ 10⁴；nums 已按非递减排序。
+    进阶：设计 O(n) 的线性解法。</p>
+  </details>
+  <details class="problem">
+    <summary>📋 完整题面 · 11 盛最多水的容器（Medium）</summary>
+    <p>给定一个长度为 <code>n</code> 的整数数组 <code>height</code>。有 <code>n</code> 条垂线，
+    第 <code>i</code> 条线的两个端点是 <code>(i, 0)</code> 和 <code>(i, height[i])</code>。
+    找出其中的两条线，使得它们与 x 轴共同构成的容器可以容纳最多的水。返回容器可以储存的最大水量。
+    说明：你不能倾斜容器。</p>
+    <pre>示例 1：height = [1,8,6,2,5,4,8,3,7] → 49
+示例 2：height = [1,1]                → 1</pre>
+    <p>提示：n == height.length；2 ≤ n ≤ 10⁵；0 ≤ height[i] ≤ 10⁴。</p>
+  </details>
+</div>
+
+<h2>延伸</h2>
+<p><strong>Primary source</strong>：<a href="https://programmercarl.com/algo/array/">随想录数组章 · 977</a>；
+11 的排除论证可对照 <a href="https://leetcode.cn/problems/container-with-most-water/solutions/">力扣 11 官方题解</a>的「双指针」一节。
+<strong>记住这个论证套路</strong>——W13-14 贪心专题会反复用到同款「交换论证」，到时我会回指本题。</p>
+
+<div class="keyidea">老规矩：quiz 哪题错了、盛水哪步的「为什么安全」说不圆——回来问，把它钉死再走。</div>
+
+<nav class="lesson-nav">
+  <a href="0004-fast-slow-pointers.html">← 0004 快慢指针</a>
+  <span class="disabled">下一课 0006 · 滑动窗口（未解锁）</span>
+</nav>
+
+<footer>
+  <p>algorithm-road · 阶段 1 · 数组 · 2026-11-14 补产 ·
+  完成复盘后请在 <a href="../algo-tracker/进度表.md">进度表</a> 打卡。</p>
+</footer>
+
+<script src="../assets/sim.js"></script>
+<script src="../assets/quiz.js"></script>
+<script>
+(function () {
+  "use strict";
+  var A977 = [-7, -5, -2, 1, 4, 6];
+  var H11 = [1, 8, 6, 2, 5, 4, 8, 3, 7];
+  var srcEl = document.getElementById("cells-src");
+  var resEl = document.getElementById("cells-res");
+  var hEl = document.getElementById("cells-h");
+  var w977 = document.getElementById("wrap977");
+  var w11 = document.getElementById("wrap11");
+  var invEl = document.getElementById("invariant");
+  var logEl = document.getElementById("simlog");
+  var outEl = document.getElementById("simres");
+  var stepBtn = document.getElementById("stepbtn");
+  var resetBtn = document.getElementById("resetbtn");
+  var S = null;
+
+  function plan977() {
+    var n = A977.length, res = new Array(n), steps = [];
+    var l = 0, r = n - 1, k = n - 1, guard = 0;
+    while (l <= r) {
+      var ls = A977[l] * A977[l], rs = A977[r] * A977[r];
+      var st = { l: l, r: r, k: k, res: res.slice() };
+      if (ls > rs) { res[k] = ls; st.note = "a[l]²=" + ls + " > a[r]²=" + rs + " → res[" + k + "] ← " + ls + "，l++"; l++; }
+      else { res[k] = rs; st.note = "a[r]²=" + rs + " ≥ a[l]²=" + ls + " → res[" + k + "] ← " + rs + "，r--"; r--; }
+      st.resAfter = res.slice();
+      steps.push(st); k--;
+      if (++guard > 40) break;
+    }
+    return { steps: steps, res: res };
+  }
+
+  function plan11() {
+    var steps = [], l = 0, r = H11.length - 1, best = 0;
+    while (l < r) {
+      var h = Math.min(H11[l], H11[r]), w = r - l, area = h * w;
+      if (area > best) best = area;
+      var st = { l: l, r: r, area: area, best: best };
+      if (H11[l] <= H11[r]) { st.move = "l"; st.note = "短板在左（h[l]=" + H11[l] + " ≤ h[r]=" + H11[r] + "）：面积 " + h + "×" + w + " = " + area + "，best=" + best + " → 移左端（移长板必不增）"; l++; }
+      else { st.move = "r"; st.note = "短板在右（h[r]=" + H11[r] + " < h[l]=" + H11[l] + "）：面积 " + h + "×" + w + " = " + area + "，best=" + best + " → 移右端"; r--; }
+      steps.push(st);
+    }
+    return { steps: steps, best: best };
+  }
+
+  function start(m) {
+    if (m === 0) { S = { mode: 0, steps: plan977().steps, res: plan977().res, i: 0 }; w977.style.display = ""; w11.style.display = "none"; }
+    else { S = { mode: 1, steps: plan11().steps, best: plan11().best, i: 0 }; w977.style.display = "none"; w11.style.display = ""; }
+    logEl.innerHTML = ""; outEl.textContent = "";
+    stepBtn.disabled = false;
+    render();
+  }
+
+  function done() { return S.i >= S.steps.length; }
+
+  function render() {
+    if (!S) { srcEl.innerHTML = ""; resEl.innerHTML = ""; hEl.innerHTML = ""; return; }
+    var st = S.steps[S.i];
+    if (S.mode === 0) {
+      var n = A977.length;
+      var html = "";
+      for (var i = 0; i < n; i++) {
+        var mk = "";
+        if (st) { if (i === st.l) mk = "l"; if (i === st.r) mk += (mk ? " r" : "r"); }
+        html += '<div class="cell"><div class="v">' + A977[i] + '</div><div class="mk">' + mk + '</div></div>';
+      }
+      srcEl.innerHTML = html;
+      var shown = st ? st.res : S.res;
+      var k = st ? st.k : -1;
+      var html2 = "";
+      for (var j = 0; j < n; j++) {
+        var cls = "cell" + (shown[j] !== undefined ? " gez" : "");
+        var mk2 = (j === k) ? "k" : "";
+        html2 += '<div class="' + cls + '"><div class="v">' + (shown[j] !== undefined ? shown[j] : "·") + '</div><div class="mk">' + mk2 + '</div></div>';
+      }
+      resEl.innerHTML = html2;
+      if (st) {
+        invEl.textContent = "不变量：res[" + (st.k + 1) + "..n) 已放好最大的数；未处理 [l..r] 的最大值必在两端。先预测：这轮取哪端、l 还是 r 动？";
+      } else {
+        invEl.textContent = "结果 " + JSON.stringify(S.res) + "，共 " + S.steps.length + " 步，O(n) 一趟。";
+        outEl.textContent = "✓ 977 完成";
+      }
+    } else {
+      var m = H11.length, html3 = "";
+      for (var t = 0; t < m; t++) {
+        var mk3 = "";
+        if (st) { if (t === st.l) mk3 = "l"; if (t === st.r) mk3 += (mk3 ? " r" : "r"); }
+        var short = st && ((st.move === "l" && t === st.l) || (st.move === "r" && t === st.r));
+        html3 += '<div class="cell' + (short ? " ltz" : "") + '"><div class="v">' + H11[t] + '</div><div class="mk">' + mk3 + '</div></div>';
+      }
+      hEl.innerHTML = html3;
+      if (st) {
+        invEl.textContent = "当前 best = " + st.best + "（历史最大面积）。先口头回答：谁是短板？这步之后移哪端、为什么安全？";
+      } else {
+        invEl.textContent = "指针相遇，best = " + S.best + "（力扣示例答案 49）。共 " + S.steps.length + " 步，O(n)。";
+        outEl.textContent = "✓ 11 返回 " + S.best;
+      }
+    }
+    stepBtn.disabled = done();
+  }
+
+  stepBtn.addEventListener("click", function () {
+    if (!S || done()) return;
+    var st = S.steps[S.i];
+    S.i++;
+    var li = document.createElement("li");
+    li.textContent = st.note;
+    logEl.appendChild(li);
+    render();
+  });
+
+  resetBtn.addEventListener("click", function () {
+    S = null; stepBtn.disabled = true;
+    srcEl.innerHTML = ""; resEl.innerHTML = ""; hEl.innerHTML = "";
+    logEl.innerHTML = ""; outEl.textContent = "";
+    invEl.textContent = "已重置。选一个场景。";
+  });
+
+  simPresets(document, function (b) { start(parseInt(b.getAttribute("data-m"), 10)); });
+})();
+</script>
+</main>
+</body>
+</html>
