@@ -188,23 +188,28 @@
   function plan(t) {
     var steps = [], l = 0, sum = 0, best = null, bestWin = null;
     for (var r = 0; r < N; r++) {
+      // 扩张步：帧显示动作前状态（a[r] 尚未入窗），日志写「前 → 后」
+      steps.push({ pl: l, pr: r - 1, psum: sum, best: best, bestWin: bestWin,
+        note: "扩张：吞入 a[" + r + "]=" + A[r] + "，窗口和 " + sum + " → " + (sum + A[r]) +
+          ((sum + A[r]) >= t ? " ≥ " + t + "，触发收缩" : "（仍 < " + t + "）") });
       sum += A[r];
-      steps.push({ l: l, r: r, sum: sum, best: best, bestWin: bestWin, type: "expand",
-        note: "扩张：吞入 a[" + r + "]=" + A[r] + "，窗口和 = " + sum + (sum >= t ? " ≥ " + t + "，触发收缩" : " < " + t) });
       while (sum >= t) {
         var len = r - l + 1;
-        if (best === null || len < best) { best = len; bestWin = [l, r]; }
-        steps.push({ l: l, r: r, sum: sum, best: best, bestWin: bestWin, type: "shrink",
-          note: "满足（" + sum + " ≥ " + t + "）：记录长度 " + len + "（best=" + best + "），吐出 a[" + l + "]=" + A[l] + "，l++" });
+        var improved = best === null || len < best;
+        steps.push({ pl: l, pr: r, psum: sum, best: best, bestWin: bestWin,
+          note: "收缩：满足（" + sum + " ≥ " + t + "）→ 记录长度 " + len +
+            (improved ? "，best " + (best === null ? "∞" : best) + " → " + len : "（未刷新）") +
+            "；吐出 a[" + l + "]=" + A[l] + "，窗口和 " + sum + " → " + (sum - A[l]) });
+        if (improved) { best = len; bestWin = [l, r]; }
         sum -= A[l]; l++;
       }
     }
-    return { steps: steps, best: best, bestWin: bestWin };
+    return { steps: steps, best: best, bestWin: bestWin, fin: { l: l, r: N - 1, sum: sum } };
   }
 
   function start(t) {
     var p = plan(t);
-    S = { t: t, steps: p.steps, best: p.best, bestWin: p.bestWin, i: 0 };
+    S = { t: t, steps: p.steps, best: p.best, bestWin: p.bestWin, fin: p.fin, i: 0 };
     logEl.innerHTML = ""; resEl.textContent = "";
     stepBtn.disabled = false;
     render();
@@ -215,27 +220,30 @@
   function render() {
     if (!S) { cellsEl.innerHTML = ""; return; }
     var st = S.steps[S.i];
-    var l, r, sum, best;
-    if (st) { l = st.l; r = st.r; sum = st.sum; best = st.best; }
-    else {
-      var last = S.steps[S.steps.length - 1];
-      l = last.l + (last.type === "shrink" ? 1 : 0); r = last.r; best = S.best;
-    }
+    // 显示的永远是「即将执行的这一步发生之前」的状态——预测不被剧透
+    var l = st ? st.pl : S.fin.l;
+    var r = st ? st.pr : S.fin.r;
+    var sum = st ? st.psum : S.fin.sum;
+    var best = st ? st.best : S.best;
     var html = "";
     for (var i = 0; i < N; i++) {
       var cls = "cell";
-      if (st && i >= l && i <= r) cls += " gez";
+      if (i >= l && i <= r) cls += " gez";
       var mk = "";
-      if (st) { if (i === l) mk = "l"; if (i === r) mk += (mk ? " r" : "r"); }
+      if (i === l) mk = "l";
+      if (i === r && r >= l) mk += (mk ? " r" : "r");
       html += '<div class="' + cls + '"><div class="v">' + A[i] + '</div><div class="mk">' + mk + '</div></div>';
     }
     cellsEl.innerHTML = html;
+    var bw = (st ? st.bestWin : S.bestWin);
+    var bwTxt = bw ? "（窗口 a[" + bw[0] + ".." + bw[1] + "]）" : "";
+    var winTxt = (l > r) ? "空" : "[" + l + ".." + r + "]";
     if (st) {
-      var bw = st.bestWin ? "（窗口 a[" + st.bestWin[0] + ".." + st.bestWin[1] + "]）" : "";
-      invEl.textContent = "窗口 [" + l + ".." + r + "]，sum = " + sum +
-        "，best = " + (st.best === null ? "∞" : st.best + bw) + "。先预测：下一步扩张还是收缩？";
+      invEl.textContent = "当前窗口 " + winTxt + "，sum = " + sum +
+        "，best = " + (best === null ? "∞" : best + bwTxt) + "。先预测：下一步扩张还是收缩？";
     } else {
-      invEl.textContent = "r 走完全程。best = " + (S.best === null ? "从未满足 → 返回 0" : S.best + "（力扣答案）");
+      invEl.textContent = "r 走完全程，最终窗口 " + winTxt + "（sum = " + sum + "）。best = " +
+        (S.best === null ? "从未满足 → 返回 0" : S.best + bwTxt + "（力扣答案）");
       resEl.textContent = "209 返回 " + (S.best === null ? 0 : S.best);
     }
     stepBtn.disabled = done();
