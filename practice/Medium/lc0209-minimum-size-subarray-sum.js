@@ -3,6 +3,20 @@
 //      （每次记录 r-l+1，吐出左端）；前提：元素全正（单调性营业执照）
 var minSubArrayLen = function (target, nums) {
   // TODO 从这里开始。动笔前口述：不变量？l 为什么不回头？为什么 while 收缩？
+  let l = 0;
+  let r = 0;
+  let best = Infinity;
+  let sum = 0;
+  while (r <= nums.length - 1) {
+    sum += nums[r];
+    while (sum >= target) {
+      best = Math.min(best, r - l + 1);
+      sum -= nums[l];
+      l++;
+    }
+    r++;
+  }
+  return best === Infinity ? 0 : best;
 };
 
 // ---------- 本地测试（提交力扣时只复制上面的 minSubArrayLen 函数）----------
