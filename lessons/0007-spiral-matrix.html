@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0007 · 矩阵循环不变量：转圈的艺术</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+
+<p class="kicker">阶段 1 · 数组 · 课程 0007 · 数组专题收官</p>
+<h1>矩阵循环不变量：转圈的艺术</h1>
+<p class="meta">约 25 分钟 · 前置：0001（区间合同）、0006（滑窗边界感）·
+实战：LeetCode 59 + 54（双脚手架已备）· 完成即数组收官，下周进链表</p>
+
+<h2>模型：四个边界，一圈四段</h2>
+<p>转圈题没有算法难度，只有<strong>工程精度</strong>。用四个边界变量描述当前未处理的「圈」：
+<code>t / b / l / r</code>（上/下/左/右），每圈按固定顺序走四段，走完一圈边界各向内收一格：</p>
+<table>
+  <thead><tr><th>段</th><th>方向</th><th>闭区间遍历</th><th>走完后</th></tr></thead>
+  <tbody>
+    <tr><td>上段</td><td>左 → 右</td><td><code>j ∈ [l, r]</code>，行 = t</td><td><code>t++</code></td></tr>
+    <tr><td>右段</td><td>上 → 下</td><td><code>i ∈ [t, b]</code>，列 = r</td><td><code>r--</code></td></tr>
+    <tr><td>下段</td><td>右 → 左</td><td><code>j ∈ [l, r]</code>，行 = b</td><td><code>b--</code></td></tr>
+    <tr><td>左段</td><td>下 → 上</td><td><code>i ∈ [t, b]</code>，列 = l</td><td><code>l++</code></td></tr>
+  </tbody>
+</table>
+<p>外层 <code>while (t &lt;= b &amp;&amp; l &lt;= r)</code>，边界交叉即终止。</p>
+
+<div class="keyidea">灵魂：0001 的合同思想在二维回归——<strong>区间约定统一 + 配套零件齐全</strong>。
+选了闭区间，它的配套零件就是下段/左段前的两道判空 guard：<code>if (t &lt;= b)</code> 和
+<code>if (l &lt;= r)</code>。没有 guard，只剩单行或单列时会把同一行（列）走两遍。
+另一流派全程左闭右开则不需要 guard，但要单独收尾残留的单行/单列——<strong>选一种，零件配齐，坚持到底</strong>。</div>
+
+<div class="pitfall">三个坑（第三个是前端专属）：
+① guard 忘写——54 的经典挂点，单行矩阵 <code>[[1,2,3]]</code> 直接暴露；
+② 59 是 n×n、54 是 m×n——别把矩形当正方形，b 和 r 的初始值分别是 m−1 和 n−1；
+③ JS 二维数组：<code>new Array(n).fill(new Array(n))</code> 所有行<strong>共享同一个引用</strong>，
+改一格毁全列。正确姿势：<code>Array.from({ length: n }, () =&gt; new Array(n))</code>——每行独立 new。</div>
+
+<h2>亲手走一遍：转圈填数</h2>
+<p>两个预设（n=3 / n=4）。每一帧显示「下一格要填哪里」的预测位（虚线框）——
+转圈题的最好训练就是<strong>在按下下一步前说出下一格的坐标</strong>。注意每圈开始时四边界各在哪。</p>
+
+<div class="sim no-print">
+  <div class="sim-controls">
+    <span>矩阵规模：
+      <button class="btn tgt" type="button" data-n="3">n = 3</button>
+      <button class="btn tgt" type="button" data-n="4">n = 4</button>
+    </span>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
+    <button class="btn" type="button" id="resetbtn">重置</button>
+  </div>
+  <div id="grid" style="display:grid; gap:4px; margin:1rem 0; width:max-content;"></div>
+  <div class="sim-note" id="invariant">先选一个矩阵规模。（虚线格 = 下一格的预测位）</div>
+  <ol class="sim-log" id="simlog"></ol>
+  <p class="sim-result" id="simres"></p>
+</div>
+
+<h2>检查站：五道题</h2>
+
+<div class="quiz" data-quiz>
+<script type="application/json">
+{
+  "questions": [
+    {
+      "q": "转圈题决定成败的关键是什么？",
+      "options": [
+        { "t": "数组必须提前排序", "why": "错。矩阵元素本来就无序可排，这题与排序毫无关系。" },
+        { "t": "必须使用递归实现", "why": "错。四边界 + while 是标准迭代形态，递归只会更绕。" },
+        { "t": "区间约定必须统一", "why": "对。闭区间/左闭右开选一种，配套零件（guard 或收尾）配齐并坚持到底——0001 的合同思想在二维的回归。" },
+        { "t": "顺时针比逆时针好", "why": "错。方向由题目规定，两个方向难度完全一样，胜负不在方向在约定。" }
+      ],
+      "answer": 2
+    },
+    {
+      "q": "闭区间流派里，下段/左段前的判空 guard 防的是？",
+      "options": [
+        { "t": "防单行单列重复", "why": "对。只剩一行/一列时，上段（或右段）已经把它走完，再走下段/左段就是同一行（列）第二遍——guard 挡掉这两段。" },
+        { "t": "防数组越界崩溃", "why": "错。越界由循环边界本身保证，不归 guard 管；guard 管的是逻辑重复。" },
+        { "t": "防数值重复填入", "why": "错。填入的值由计数器递增天然唯一，重复的威胁是位置不是数值。" },
+        { "t": "防死循环不终止", "why": "错。for 段都是有限的，外层 while 每圈收一格，不会死循环；没有 guard 的症状是重复不是卡死。" }
+      ],
+      "answer": 0
+    },
+    {
+      "q": "JS 里正确创建 n×n 二维数组的方式是？",
+      "options": [
+        { "t": "fill 一个行数组", "why": "错。new Array(n).fill(new Array(n)) 的每一行是同一个引用——改 [0][1] 会同时改所有行的第 1 列。" },
+        { "t": "每行各建新数组", "why": "对。Array.from({length:n}, () => new Array(n)) 每次迭代独立 new 一行，引用互不干扰。" },
+        { "t": "先建一列再复制", "why": "错。任何「建一份再复制」的思路都共享引用，复制的是指针不是新数组。" },
+        { "t": "用 concat 拼接行", "why": "错。concat 拼出的是一维长数组，凑不出二维结构。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "影响代码结构的、59 与 54 的最大差异是？",
+      "options": [
+        { "t": "填充与读取之别", "why": "错。填数/读数只是数据流向，四段循环的骨架一模一样。" },
+        { "t": "一个有序一个乱", "why": "错。两者的矩阵内容都与有序性无关。" },
+        { "t": "行序与列序相反", "why": "错。两者都按顺时针走，没有行序列序之别。" },
+        { "t": "正方形与长方形", "why": "对。59 是 n×n，54 是 m×n——矩形里 t/b 与 l/r 的初始值、终止条件都不同，把矩形当正方形写必挂。" }
+      ],
+      "answer": 3
+    },
+    {
+      "q": "54 螺旋遍历的时间复杂度是？",
+      "options": [
+        { "t": "线性于格子总数", "why": "对。O(m×n)：每个格子恰好被访问一次，四段循环只是切分访问顺序。" },
+        { "t": "线性于较长边长", "why": "错。只看边长会漏掉整面格子，访问次数显然是格子数。" },
+        { "t": "对数于格子总数", "why": "错。没有可折半的判定结构，逐格访问不可能 log。" },
+        { "t": "平方于较短边长", "why": "错。圈数是 min(m,n)/2，但总访问量是全部格子 m×n，不是圈数的平方。" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+</script>
+</div>
+
+<h2>实战（数组收官之战）</h2>
+<div class="task">
+  <p>两道都配好脚手架与完整题面，动笔前先写下你选的区间流派（闭区间 + guard，还是左闭右开 + 收尾）：</p>
+  <ul>
+    <li><strong>59 螺旋矩阵 II</strong>（主线，先做）：
+    <a href="../practice/Medium/lc0059-spiral-matrix-ii.js">practice/Medium/lc0059</a> →
+    提交<a href="https://leetcode.cn/problems/spiral-matrix-ii/">力扣 59</a>；</li>
+    <li><strong>54 螺旋矩阵</strong>（补充，Hot100 矩阵组）：
+    <a href="../practice/Medium/lc0054-spiral-matrix.js">practice/Medium/lc0054</a> →
+    提交<a href="https://leetcode.cn/problems/spiral-matrix/">力扣 54</a>——
+    用例里有单行、单列、宽扁矩阵，正是 guard 的照妖镜。</li>
+  </ul>
+  <p><strong>复习提醒</strong>：11-18（后天）复习槽四连——34 D+7、33 D+3、11 D+3、15 D+3（15 的 gate：
+  动笔前先口述「降维为什么成立 + 两层去重各防什么」）。</p>
+  <details class="problem">
+    <summary>📋 完整题面 · 59 螺旋矩阵 II（Medium）</summary>
+    <p>给你一个正整数 <code>n</code>，生成一个包含 <code>1</code> 到 <code>n²</code> 所有元素，
+    且元素按<strong>顺时针顺序螺旋排列</strong>的 <code>n × n</code> 正方形矩阵 <code>matrix</code>。</p>
+    <pre>示例：n = 3 → [[1,2,3],
+              [8,9,4],
+              [7,6,5]]</pre>
+    <p>提示：1 ≤ n ≤ 20。</p>
+  </details>
+  <details class="problem">
+    <summary>📋 完整题面 · 54 螺旋矩阵（Medium）</summary>
+    <p>给你一个 <code>m</code> 行 <code>n</code> 列的矩阵 <code>matrix</code>，
+    请按照<strong>顺时针螺旋顺序</strong>，返回矩阵中的所有元素。</p>
+    <pre>示例 1：[[1,2,3],[4,5,6],[7,8,9]] → [1,2,3,6,9,8,7,4,5]
+示例 2：[[1,2,3,4],[5,6,7,8],[9,10,11,12]] → [1,2,3,4,8,12,11,10,9,5,6,7]</pre>
+    <p>提示：m == matrix.length；n == matrix[i].length；1 ≤ m, n ≤ 10；-100 ≤ matrix[i][j] ≤ 100。</p>
+  </details>
+</div>
+
+<h2>延伸</h2>
+<p><strong>Primary source</strong>：<a href="https://programmercarl.com/algo/array/">随想录 · 数组章 · 59 螺旋矩阵II</a>——
+随想录把这题的讲解就叫「坚持循环不变量原则」，与本课灵魂完全同源，读起来会是熟悉的配方。</p>
+
+<div class="keyidea">老规矩：哪一圈走乱了、guard 放哪想不通，回来问。做完这两题，
+数组的「下标差 vs 长度」「区间约定」「降维」三件武器就都开过锋了——链表见。</div>
+
+<nav class="lesson-nav">
+  <a href="0006-sliding-window.html">← 0006 滑动窗口</a>
+  <span class="disabled">下一课 · 链表专题（下周开启）</span>
+</nav>
+
+<footer>
+  <p>algorithm-road · 阶段 1 · 数组收官 · 2026-11-16 · 打卡由 agent 记账。</p>
+</footer>
+
+<script src="../assets/sim.js"></script>
+<script src="../assets/quiz.js"></script>
+<script>
+(function () {
+  "use strict";
+  var gridEl = document.getElementById("grid");
+  var invEl = document.getElementById("invariant");
+  var logEl = document.getElementById("simlog");
+  var resEl = document.getElementById("simres");
+  var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
+  var resetBtn = document.getElementById("resetbtn");
+  var S = null, lastPick = null;
+
+  function plan(n) {
+    var steps = [], v = 1, t = 0, b = n - 1, l = 0, r = n - 1, layer = 1;
+    function push(i, j, seg) {
+      steps.push({ i: i, j: j, v: v, t: t, b: b, l: l, r: r, layer: layer, seg: seg });
+      v++;
+    }
+    while (t <= b && l <= r) {
+      for (var j = l; j <= r; j++) push(t, j, "上段");
+      t++;
+      for (var i = t; i <= b; i++) push(i, r, "右段");
+      r--;
+      if (t <= b) { for (var j2 = r; j2 >= l; j2--) push(b, j2, "下段"); b--; }
+      if (l <= r) { for (var i2 = b; i2 >= t; i2--) push(i2, l, "左段"); l++; }
+      layer++;
+    }
+    return steps;
+  }
+
+  function start(n) {
+    lastPick = n;
+    S = { n: n, steps: plan(n), i: 0 };
+    logEl.innerHTML = ""; resEl.textContent = "";
+    stepBtn.disabled = false;
+    render();
+  }
+
+  function done() { return S.i >= S.steps.length; }
+
+  function render() {
+    if (!S) { gridEl.innerHTML = ""; return; }
+    var n = S.n;
+    var st = S.steps[S.i];
+    var filled = {};
+    for (var k = 0; k < S.i; k++) filled[S.steps[k].i + "-" + S.steps[k].j] = S.steps[k].v;
+    var bt = st ? st.t : 0, bb = st ? st.b : -1, bl = st ? st.l : 0, br = st ? st.r : -1;
+    var html = "";
+    for (var i = 0; i < n; i++) {
+      for (var j = 0; j < n; j++) {
+        var key = i + "-" + j;
+        var cls = "cell";
+        if (filled[key] !== undefined) cls += " gez";
+        else if (st && i >= bt && i <= bb && j >= bl && j <= br) cls += "";
+        else cls += " ltz";
+        if (st && st.i === i && st.j === j && filled[key] === undefined) cls += " div";
+        html += '<div class="' + cls + '"><div class="v">' + (filled[key] !== undefined ? filled[key] : "·") + '</div><div class="mk"></div></div>';
+      }
+    }
+    gridEl.innerHTML = html;
+    gridEl.style.gridTemplateColumns = "repeat(" + n + ", 3.1rem)";
+    if (st) {
+      invEl.textContent = "第 " + st.layer + " 圈·" + st.seg + "前：边界 t=" + st.t + " b=" + st.b + " l=" + st.l + " r=" + st.r +
+        "。预测：下一格填在第几行第几列？";
+    } else {
+      invEl.textContent = "填满 n=" + n + "，共 " + S.steps.length + " 步（n² 格各一次）。数组专题收官！";
+      resEl.textContent = "✓ 59 完成";
+    }
+    backBtn.disabled = !S || S.i === 0;
+    stepBtn.disabled = done();
+  }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
+
+  stepBtn.addEventListener("click", function () {
+    if (!S || done()) return;
+    var st = S.steps[S.i];
+    S.i++;
+    var li = document.createElement("li");
+    li.textContent = "mat[" + st.i + "][" + st.j + "] ← " + st.v + "（第 " + st.layer + " 圈·" + st.seg + "）";
+    logEl.appendChild(li);
+    render();
+  });
+
+  resetBtn.addEventListener("click", function () {
+    if (lastPick !== null) { start(lastPick); return; }
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
+    gridEl.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
+    invEl.textContent = "已重置。选一个矩阵规模。（虚线格 = 下一格的预测位）";
+  });
+
+  simPresets(document, function (b) { start(parseInt(b.getAttribute("data-n"), 10)); });
+})();
+</script>
+</main>
+</body>
+</html>
