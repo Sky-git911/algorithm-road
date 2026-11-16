@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0006 · 滑动窗口：扩张、收缩与单调性</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+
+<p class="kicker">阶段 1 · 数组 · 课程 0006 · 第 2 周</p>
+<h1>滑动窗口：扩张、收缩与单调性</h1>
+<p class="meta">约 25 分钟 · 前置：<a href="0004-fast-slow-pointers.html">0004</a> /
+<a href="0005-colliding-pointers.html">0005</a> ·
+实战：LeetCode 209（Medium）· 本课同时是你的**转移测试**——新模型新题，检验「推」而不是「背」</p>
+
+<h2>为什么需要窗口</h2>
+<p>找「和 ≥ target 的最短连续子数组」，朴素做法是枚举所有连续子数组：两层循环，
+每个窗口重新求和，O(n²)——和你 11 题初版被超时淘汰的是同一族。
+滑窗的思路：<strong>窗口在数组上滑动，用一个变量增量维护窗口的和</strong>，
+每个元素进窗一次、出窗一次，总共 2n 步，O(n)。</p>
+
+<h2>决策表：谁动、什么时候动</h2>
+<table>
+  <thead><tr><th>角色</th><th>规则</th></tr></thead>
+  <tbody>
+    <tr><td>r（右端·扩张）</td><td><strong>每轮必进</strong>：吞入 a[r]，sum 增量加上</td></tr>
+    <tr><td>l（左端·收缩）</td><td>当窗口<strong>满足条件</strong>（sum ≥ target）时，用 <strong>while 持续收缩</strong>：先记录当前长度，再吐出 a[l]、l++，直到不满足</td></tr>
+    <tr><td>记录时机</td><td>在<strong>收缩循环内</strong>记录（每次还满足条件时的窗口都是候选）；全程维护最短</td></tr>
+    <tr><td>终止</td><td>r 走到 n；答案 = 历史最短（从未满足过 → 0）</td></tr>
+  </tbody>
+</table>
+
+<div class="keyidea">不变量（第四种形态）：收缩结束时，<strong>[l..r] 是以 r 结尾的、还满足条件的窗口里最长不能缩的那一个</strong>——
+再缩一格就不满足。外层的 best 记录历史最短。指针三件套至此集齐：快慢（同向·读写分工）、
+对撞（相向·排除一端）、滑窗（同向·张缩——l 和 r 都是「读」语义，中间那段就是窗口）。</div>
+
+<h2>灵魂：单调性——滑窗的营业执照</h2>
+<p>滑窗成立的前提只有一条：<strong>窗口指标随扩张只增、随收缩只减</strong>。
+209 里数组<strong>全正</strong>保证了它——加一个正数和必增、吐一个正数和必减，
+所以「满足条件的最小右端」随 l 增大只增不减，l 永不回头，O(n) 由此而来。
+你 quiz 错的那道 Q9，考的正是这条营业执照：正数数组的和有单调性，滑窗适用；
+旋转数组、无序配对、哈希分组都没有，各自的武器是对撞二分、哈希表。</p>
+
+<div class="pitfall">四个坑（第三个是你 11 题超时的近亲）：
+① 收缩用 <strong>while</strong> 不是 if——满足条件时可能能连缩好几格；
+② sum <strong>增量维护</strong>，每轮重算立刻退化 O(n²)；
+③ 记录长度在收缩循环内（r−l+1），不是收缩完再记；
+④ 全正数是前提——<strong>出现负数，单调性破产，滑窗直接失效</strong>（负数版是 W4 哈希周的前缀和话题）。</div>
+
+<h2>亲手走一遍：窗口的张与缩</h2>
+<p>三个预设：t=7（力扣示例）、t=4（能缩到单元素）、t=16（无解返回 0）。
+每步先预测：这是扩张步还是收缩步？收缩步记录的长度是多少？</p>
+
+<div class="sim no-print">
+  <div class="sim-controls">
+    <span>目标 t：
+      <button class="btn tgt" type="button" data-t="7">7</button>
+      <button class="btn tgt" type="button" data-t="4">4</button>
+      <button class="btn tgt" type="button" data-t="16">16</button>
+    </span>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="resetbtn">重置</button>
+  </div>
+  <div class="cells" id="cells"></div>
+  <div class="sim-note" id="invariant">先选一个目标 t。（橙格 = 当前窗口 [l..r]）</div>
+  <ol class="sim-log" id="simlog"></ol>
+  <p class="sim-result" id="simres"></p>
+</div>
+
+<h2>检查站：五道题</h2>
+
+<div class="quiz" data-quiz>
+<script type="application/json">
+{
+  "questions": [
+    {
+      "q": "滑动窗口每轮必动的指针是？",
+      "options": [
+        { "t": "左端收缩指针", "why": "错。l 只在窗口满足条件时才动；每轮必进的是右端。" },
+        { "t": "两端交替前进", "why": "错。交替前进是错觉——r 连续扩张多轮后才轮到 l 连续收缩，节奏由条件决定。" },
+        { "t": "右端扩张指针", "why": "对。r 每轮吞入一个新元素（sum 增量加上），扩张是主动作，收缩是条件触发的被动响应。" },
+        { "t": "两指同时前进", "why": "错。那是固定长度窗口的形态，本题是变长窗口，两端各走各的节奏。" }
+      ],
+      "answer": 2
+    },
+    {
+      "q": "窗口满足条件时，收缩应该怎么控制？",
+      "options": [
+        { "t": "满足时收缩一次", "why": "错。if 只缩一格，同一右端下可能存在更短窗口被漏掉——必须缩到不能再缩。" },
+        { "t": "满足时连续收缩", "why": "对。while：每次记录当前长度，吐出左端、l++，直到条件破掉——这个右端的候选一次榨干。" },
+        { "t": "每轮固定收两格", "why": "错。收缩几格由条件决定，固定步数会跳过合法窗口。" },
+        { "t": "从来不需要收缩", "why": "错。不收缩窗口只会越长越大，永远得不到「最短」。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "滑动窗口为什么是 O(n)？",
+      "options": [
+        { "t": "两指合计走2n步", "why": "对。r 从 0 走到 n、l 从 0 走到 n，各自只前进不回头，合计 ≤ 2n 次指针移动。" },
+        { "t": "每步都能排除一半", "why": "错。那是二分的 O(log n)；滑窗一次只挪一格，不砍半。" },
+        { "t": "数组已经排好序了", "why": "错。209 的数组无需排序，窗口靠的是连续性不是有序性。" },
+        { "t": "窗口大小是固定的", "why": "错。本题窗口是变长的，固定窗口只是滑窗的特例。" }
+      ],
+      "answer": 0
+    },
+    {
+      "q": "如果数组里出现负数，这个模型会怎样？",
+      "options": [
+        { "t": "完全不受任何影响", "why": "错。负数让「扩张必增、收缩必减」失效，收缩判断的前提直接崩塌。" },
+        { "t": "只是答案需要取模", "why": "错。取模与模型正确性毫无关系。" },
+        { "t": "改用三指针就好了", "why": "错。三指针救不了单调性；负数版要换武器（前缀和 + 哈希，W4 见）。" },
+        { "t": "单调性失效滑窗崩", "why": "对。扩张可能让和变小、收缩可能让和变大，「满足条件的最小右端」不再单调——营业执照被吊销。" }
+      ],
+      "answer": 3
+    },
+    {
+      "q": "窗口的 sum 应该怎么维护？",
+      "options": [
+        { "t": "每轮重新求一遍", "why": "错。每轮 O(n) 求和，总量 O(n²)——正是滑窗要消灭的朴素法。" },
+        { "t": "直接用数组长度", "why": "错。长度和窗口和是两个量，209 要的是和的条件。" },
+        { "t": "增量加减不重算", "why": "对。进窗 +、出窗 −，每次 O(1)，这是 2n 步里每步便宜的原因。" },
+        { "t": "乘以目标值即可", "why": "错。无此算法，纯属凑数选项。" }
+      ],
+      "answer": 2
+    }
+  ]
+}
+</script>
+</div>
+
+<h2>实战（兼转移测试）</h2>
+<div class="task">
+  <p><strong>LeetCode 209 · 长度最小的子数组</strong>——新模型 + 新题，动笔前先口述（这是约定）：
+  不变量是什么？为什么 l 不回头？为什么 while 收缩？</p>
+  <p>脚手架：<a href="../practice/Medium/lc0209-minimum-size-subarray-sum.js">practice/Medium/lc0209</a> →
+  node 全过 → 提交<a href="https://leetcode.cn/problems/minimum-size-subarray-sum/">力扣 209</a> → 口述复杂度（O(n) / O(1)）。</p>
+  <ul>
+    <li>一次通过且 ≤20 分钟 → 只打卡；卡壳 / 看提示 → 错题本（我记账）+ 明天 D+1；</li>
+    <li><strong>复习提醒</strong>：15 的 D+1 盲写是明天（11-17）；11-18 复习槽三连：34 D+7、33 D+3、11 D+3。</li>
+  </ul>
+  <details class="problem">
+    <summary>📋 完整题面 · 209 长度最小的子数组（Medium）</summary>
+    <p>给定一个含有 <code>n</code> 个<strong>正整数</strong>的数组和一个正整数 <code>target</code>。
+    找出该数组中满足其和 <code>≥ target</code> 的<strong>长度最小的连续子数组</strong>
+    <code>[nums[l], nums[l+1], …, nums[r]]</code>，并返回其长度。如果不存在符合条件的子数组，返回 <code>0</code>。</p>
+    <pre>示例 1：target = 7, nums = [2,3,1,2,4,3]  → 2（子数组 [4,3]）
+示例 2：target = 4, nums = [1,4,4]        → 1（子数组 [4]）
+示例 3：target = 11, nums = [1,1,1,1,1,1,1,1] → 0</pre>
+    <p>提示：1 ≤ target ≤ 10⁹；1 ≤ nums.length ≤ 10⁵；1 ≤ nums[i] ≤ 10⁵。
+    进阶：O(n) 之外，能否给出 O(n log n) 的另一解法（前缀和 + 二分，正好串起你的 0001/0002）？</p>
+  </details>
+</div>
+
+<h2>延伸</h2>
+<p><strong>Primary source</strong>：<a href="https://programmercarl.com/algo/array/">随想录 · 数组章 · 209 长度最小的子数组</a>——
+随想录把这题作为滑动窗口的入门正主，讲解顺序与本课一致（先看暴力再引窗口）。</p>
+
+<div class="keyidea">做完 209 记得自评一句：这份代码是从不变量<strong>推</strong>出来的，还是从 977/11 的手感<strong>迁移</strong>出来的？
+两种都算学会，但如果你能分清自己用的是哪种，你对「背 vs 推」的自察就有了刻度。卡住随时回来问。</div>
+
+<nav class="lesson-nav">
+  <a href="0005-colliding-pointers.html">← 0005 对撞指针</a>
+  <span class="disabled">下一课 0007 · 矩阵循环不变量（未解锁）</span>
+</nav>
+
+<footer>
+  <p>algorithm-road · 阶段 1 · 数组 · 2026-11-16 ·
+  完成实战后打卡由 agent 记账（方案 A）。</p>
+</footer>
+
+<script src="../assets/sim.js"></script>
+<script src="../assets/quiz.js"></script>
+<script>
+(function () {
+  "use strict";
+  var A = [2, 3, 1, 2, 4, 3];
+  var N = A.length;
+  var cellsEl = document.getElementById("cells");
+  var invEl = document.getElementById("invariant");
+  var logEl = document.getElementById("simlog");
+  var resEl = document.getElementById("simres");
+  var stepBtn = document.getElementById("stepbtn");
+  var resetBtn = document.getElementById("resetbtn");
+  var S = null;
+
+  function plan(t) {
+    var steps = [], l = 0, sum = 0, best = null, bestWin = null;
+    for (var r = 0; r < N; r++) {
+      sum += A[r];
+      steps.push({ l: l, r: r, sum: sum, best: best, bestWin: bestWin, type: "expand",
+        note: "扩张：吞入 a[" + r + "]=" + A[r] + "，窗口和 = " + sum + (sum >= t ? " ≥ " + t + "，触发收缩" : " < " + t) });
+      while (sum >= t) {
+        var len = r - l + 1;
+        if (best === null || len < best) { best = len; bestWin = [l, r]; }
+        steps.push({ l: l, r: r, sum: sum, best: best, bestWin: bestWin, type: "shrink",
+          note: "满足（" + sum + " ≥ " + t + "）：记录长度 " + len + "（best=" + best + "），吐出 a[" + l + "]=" + A[l] + "，l++" });
+        sum -= A[l]; l++;
+      }
+    }
+    return { steps: steps, best: best, bestWin: bestWin };
+  }
+
+  function start(t) {
+    var p = plan(t);
+    S = { t: t, steps: p.steps, best: p.best, bestWin: p.bestWin, i: 0 };
+    logEl.innerHTML = ""; resEl.textContent = "";
+    stepBtn.disabled = false;
+    render();
+  }
+
+  function done() { return S.i >= S.steps.length; }
+
+  function render() {
+    if (!S) { cellsEl.innerHTML = ""; return; }
+    var st = S.steps[S.i];
+    var l, r, sum, best;
+    if (st) { l = st.l; r = st.r; sum = st.sum; best = st.best; }
+    else {
+      var last = S.steps[S.steps.length - 1];
+      l = last.l + (last.type === "shrink" ? 1 : 0); r = last.r; best = S.best;
+    }
+    var html = "";
+    for (var i = 0; i < N; i++) {
+      var cls = "cell";
+      if (st && i >= l && i <= r) cls += " gez";
+      var mk = "";
+      if (st) { if (i === l) mk = "l"; if (i === r) mk += (mk ? " r" : "r"); }
+      html += '<div class="' + cls + '"><div class="v">' + A[i] + '</div><div class="mk">' + mk + '</div></div>';
+    }
+    cellsEl.innerHTML = html;
+    if (st) {
+      var bw = st.bestWin ? "（窗口 a[" + st.bestWin[0] + ".." + st.bestWin[1] + "]）" : "";
+      invEl.textContent = "窗口 [" + l + ".." + r + "]，sum = " + sum +
+        "，best = " + (st.best === null ? "∞" : st.best + bw) + "。先预测：下一步扩张还是收缩？";
+    } else {
+      invEl.textContent = "r 走完全程。best = " + (S.best === null ? "从未满足 → 返回 0" : S.best + "（力扣答案）");
+      resEl.textContent = "209 返回 " + (S.best === null ? 0 : S.best);
+    }
+    stepBtn.disabled = done();
+  }
+
+  stepBtn.addEventListener("click", function () {
+    if (!S || done()) return;
+    var st = S.steps[S.i];
+    S.i++;
+    var li = document.createElement("li");
+    li.textContent = st.note;
+    logEl.appendChild(li);
+    render();
+  });
+
+  resetBtn.addEventListener("click", function () {
+    S = null; stepBtn.disabled = true;
+    cellsEl.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
+    invEl.textContent = "已重置。选一个目标 t。（橙格 = 当前窗口 [l..r]）";
+  });
+
+  simPresets(document, function (b) { start(parseInt(b.getAttribute("data-t"), 10)); });
+})();
+</script>
+</main>
+</body>
+</html>
