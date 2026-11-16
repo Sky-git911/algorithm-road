@@ -185,17 +185,18 @@
 
   function plan(n) {
     var steps = [], v = 1, t = 0, b = n - 1, l = 0, r = n - 1, layer = 1;
-    function push(i, j, seg) {
-      steps.push({ i: i, j: j, v: v, t: t, b: b, l: l, r: r, layer: layer, seg: seg });
+    function push(i, j, seg, ct, cb, cl, cr) {
+      steps.push({ i: i, j: j, v: v, layer: layer, seg: seg, ct: ct, cb: cb, cl: cl, cr: cr });
       v++;
     }
     while (t <= b && l <= r) {
-      for (var j = l; j <= r; j++) push(t, j, "上段");
+      var ct = t, cb = b, cl = l, cr = r; // 圈开始时定格的边界——整圈展示不变
+      for (var j = l; j <= r; j++) push(t, j, "上段", ct, cb, cl, cr);
       t++;
-      for (var i = t; i <= b; i++) push(i, r, "右段");
+      for (var i = t; i <= b; i++) push(i, r, "右段", ct, cb, cl, cr);
       r--;
-      if (t <= b) { for (var j2 = r; j2 >= l; j2--) push(b, j2, "下段"); b--; }
-      if (l <= r) { for (var i2 = b; i2 >= t; i2--) push(i2, l, "左段"); l++; }
+      if (t <= b) { for (var j2 = r; j2 >= l; j2--) push(b, j2, "下段", ct, cb, cl, cr); b--; }
+      if (l <= r) { for (var i2 = b; i2 >= t; i2--) push(i2, l, "左段", ct, cb, cl, cr); l++; }
       layer++;
     }
     return steps;
@@ -217,7 +218,7 @@
     var st = S.steps[S.i];
     var filled = {};
     for (var k = 0; k < S.i; k++) filled[S.steps[k].i + "-" + S.steps[k].j] = S.steps[k].v;
-    var bt = st ? st.t : 0, bb = st ? st.b : -1, bl = st ? st.l : 0, br = st ? st.r : -1;
+    var bt = st ? st.ct : 0, bb = st ? st.cb : -1, bl = st ? st.cl : 0, br = st ? st.cr : -1;
     var html = "";
     for (var i = 0; i < n; i++) {
       for (var j = 0; j < n; j++) {
@@ -233,8 +234,13 @@
     gridEl.innerHTML = html;
     gridEl.style.gridTemplateColumns = "repeat(" + n + ", 3.1rem)";
     if (st) {
-      invEl.textContent = "第 " + st.layer + " 圈·" + st.seg + "前：边界 t=" + st.t + " b=" + st.b + " l=" + st.l + " r=" + st.r +
-        "。预测：下一格填在第几行第几列？";
+      var moveHint =
+        st.seg === "上段" ? "走完上段后 t：" + st.ct + " → " + (st.ct + 1) :
+        st.seg === "右段" ? "走完右段后 r：" + st.cr + " → " + (st.cr - 1) :
+        st.seg === "下段" ? "走完下段后 b：" + st.cb + " → " + (st.cb - 1) :
+                            "走完左段后 l：" + st.cl + " → " + (st.cl + 1);
+      invEl.textContent = "第 " + st.layer + " 圈（边界 t=" + st.ct + " b=" + st.cb + " l=" + st.cl + " r=" + st.cr +
+        "）· 下一段：" + st.seg + "。" + moveHint + "。预测：下一格在第几行第几列？";
     } else {
       invEl.textContent = "填满 n=" + n + "，共 " + S.steps.length + " 步（n² 格各一次）。数组专题收官！";
       resEl.textContent = "✓ 59 完成";
