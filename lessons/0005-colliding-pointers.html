@@ -58,7 +58,8 @@
       <button class="btn tgt" type="button" data-m="0">977 平方排序</button>
       <button class="btn tgt" type="button" data-m="1">11 盛最多水</button>
     </span>
-    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
     <button class="btn" type="button" id="resetbtn">重置</button>
   </div>
   <div id="wrap977">
@@ -197,8 +198,9 @@
   var logEl = document.getElementById("simlog");
   var outEl = document.getElementById("simres");
   var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
   var resetBtn = document.getElementById("resetbtn");
-  var S = null;
+  var S = null, lastPick = null;
 
   function plan977() {
     var n = A977.length, res = new Array(n), steps = [];
@@ -229,6 +231,7 @@
   }
 
   function start(m) {
+    lastPick = m;
     if (m === 0) { S = { mode: 0, steps: plan977().steps, res: plan977().res, i: 0 }; w977.style.display = ""; w11.style.display = "none"; }
     else { S = { mode: 1, steps: plan11().steps, best: plan11().best, i: 0 }; w977.style.display = "none"; w11.style.display = ""; }
     logEl.innerHTML = ""; outEl.textContent = "";
@@ -281,8 +284,16 @@
         outEl.textContent = "✓ 11 返回 " + S.best;
       }
     }
+    backBtn.disabled = !S || S.i === 0;
     stepBtn.disabled = done();
   }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
 
   stepBtn.addEventListener("click", function () {
     if (!S || done()) return;
@@ -295,7 +306,8 @@
   });
 
   resetBtn.addEventListener("click", function () {
-    S = null; stepBtn.disabled = true;
+    if (lastPick !== null) { start(lastPick); return; } // 只回到第 0 帧，保留场景与高亮
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
     srcEl.innerHTML = ""; resEl.innerHTML = ""; hEl.innerHTML = "";
     logEl.innerHTML = ""; outEl.textContent = "";
     invEl.textContent = "已重置。选一个场景。";

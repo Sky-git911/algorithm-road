@@ -60,7 +60,8 @@
       <button class="btn tgt" type="button" data-t="4">4</button>
       <button class="btn tgt" type="button" data-t="16">16</button>
     </span>
-    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
     <button class="btn" type="button" id="resetbtn">重置</button>
   </div>
   <div class="cells" id="cells"></div>
@@ -182,8 +183,9 @@
   var logEl = document.getElementById("simlog");
   var resEl = document.getElementById("simres");
   var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
   var resetBtn = document.getElementById("resetbtn");
-  var S = null;
+  var S = null, lastPick = null;
 
   function plan(t) {
     var steps = [], l = 0, sum = 0, best = null, bestWin = null;
@@ -208,6 +210,7 @@
   }
 
   function start(t) {
+    lastPick = t;
     var p = plan(t);
     S = { t: t, steps: p.steps, best: p.best, bestWin: p.bestWin, fin: p.fin, i: 0 };
     logEl.innerHTML = ""; resEl.textContent = "";
@@ -246,8 +249,16 @@
         (S.best === null ? "从未满足 → 返回 0" : S.best + bwTxt + "（力扣答案）");
       resEl.textContent = "209 返回 " + (S.best === null ? 0 : S.best);
     }
+    backBtn.disabled = !S || S.i === 0;
     stepBtn.disabled = done();
   }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
 
   stepBtn.addEventListener("click", function () {
     if (!S || done()) return;
@@ -260,7 +271,8 @@
   });
 
   resetBtn.addEventListener("click", function () {
-    S = null; stepBtn.disabled = true;
+    if (lastPick !== null) { start(lastPick); return; } // 只回到第 0 帧，保留目标与高亮
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
     cellsEl.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
     invEl.textContent = "已重置。选一个目标 t。（橙格 = 当前窗口 [l..r]）";
   });

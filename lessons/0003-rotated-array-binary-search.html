@@ -65,7 +65,8 @@
       <button class="btn tgt" type="button" data-a="1">未旋转</button>
       <button class="btn tgt" type="button" data-a="2">旋转一头</button>
     </span>
-    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
     <button class="btn" type="button" id="resetbtn">重置</button>
   </div>
   <div class="cells" id="cells"></div>
@@ -207,8 +208,9 @@
   var logEl = document.getElementById("simlog");
   var resEl = document.getElementById("simres");
   var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
   var resetBtn = document.getElementById("resetbtn");
-  var S = null;
+  var S = null, lastPick = null;
 
   function plan(A) {
     var n = A.length, steps = [], l = 0, r = n - 1, guard = 0;
@@ -229,6 +231,7 @@
   }
 
   function start(presetIdx) {
+    lastPick = presetIdx;
     var A = PRESETS[presetIdx];
     var p = plan(A);
     S = { A: A, steps: p.steps, minIdx: p.minIdx, i: 0 };
@@ -264,8 +267,16 @@
       invEl.textContent = "收敛完成：最小值 = a[" + S.minIdx + "] = " + A[S.minIdx] + "，共 " + S.steps.length + " 次比较（线性扫描要 " + n + " 次）。";
       resEl.textContent = "153 返回 " + A[S.minIdx];
     }
+    backBtn.disabled = !S || S.i === 0;
     stepBtn.disabled = done();
   }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
 
   stepBtn.addEventListener("click", function () {
     if (!S || done()) return;
@@ -278,7 +289,8 @@
   });
 
   resetBtn.addEventListener("click", function () {
-    S = null; stepBtn.disabled = true;
+    if (lastPick !== null) { start(lastPick); return; } // 只回到第 0 帧，保留形态与高亮
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
     cellsEl.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
     invEl.textContent = "已重置。选一种数组形态。（灰格 = 已确认不是最小值）";
   });

@@ -70,7 +70,8 @@
       <button class="btn tgt" type="button">1</button>
       <button class="btn tgt" type="button">12</button>
     </span>
-    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
     <button class="btn" type="button" id="resetbtn">重置</button>
   </div>
   <div class="cells" id="cells"></div>
@@ -206,8 +207,9 @@
   var logEl = document.getElementById("simlog");
   var resEl = document.getElementById("simres");
   var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
   var resetBtn = document.getElementById("resetbtn");
-  var S = null;
+  var S = null, lastPick = null;
 
   function plan(t) {
     var steps = [], l = 0, r = N, guard = 0;
@@ -228,6 +230,7 @@
   }
 
   function start(t) {
+    lastPick = t;
     var p = plan(t);
     S = { t: t, steps: p.steps, div: p.div, i: 0 };
     logEl.innerHTML = ""; resEl.textContent = "";
@@ -268,8 +271,16 @@
         ? "35 题：t = " + S.t + " 的插入位置 = " + d + (A[d] === S.t ? "（且正好命中 t，34 的左边界也是它）" : "（t 不存在，插在这里）")
         : "35 题：t = " + S.t + " 的插入位置 = " + N + "（插末尾）";
     }
+    backBtn.disabled = !S || S.i === 0;
     stepBtn.disabled = done();
   }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
 
   stepBtn.addEventListener("click", function () {
     if (!S || done()) return;
@@ -282,7 +293,8 @@
   });
 
   resetBtn.addEventListener("click", function () {
-    S = null; stepBtn.disabled = true;
+    if (lastPick !== null) { start(lastPick); return; } // 只回到第 0 帧，保留目标与高亮
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
     cellsEl.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
     invEl.textContent = "已重置。选一个目标 t。（灰格 = 已确认 < t，橙格 = 已确认 ≥ t）";
   });

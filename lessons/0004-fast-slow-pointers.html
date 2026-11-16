@@ -60,7 +60,8 @@
       <button class="btn tgt" type="button" data-m="0">27 移除元素</button>
       <button class="btn tgt" type="button" data-m="1">283 移动零</button>
     </span>
-    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
     <button class="btn" type="button" id="resetbtn">重置</button>
   </div>
   <div class="cells" id="cells"></div>
@@ -197,8 +198,9 @@
   var logEl = document.getElementById("simlog");
   var resEl = document.getElementById("simres");
   var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
   var resetBtn = document.getElementById("resetbtn");
-  var S = null;
+  var S = null, lastPick = null;
 
   function plan(p) {
     var a = p.arr.slice(), n = a.length, steps = [];
@@ -238,6 +240,7 @@
   }
 
   function start(idx) {
+    lastPick = idx;
     S = { p: PRESETS[idx], steps: plan(PRESETS[idx]), i: 0 };
     logEl.innerHTML = ""; resEl.textContent = "";
     stepBtn.disabled = false;
@@ -278,8 +281,16 @@
       invEl.textContent = S.steps.finalNote;
       resEl.textContent = S.p.mode === 27 ? "27 返回 " + S.steps.finalSlow : "283 完成";
     }
+    backBtn.disabled = !S || S.i === 0;
     stepBtn.disabled = done();
   }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
 
   stepBtn.addEventListener("click", function () {
     if (!S || done()) return;
@@ -292,7 +303,8 @@
   });
 
   resetBtn.addEventListener("click", function () {
-    S = null; stepBtn.disabled = true;
+    if (lastPick !== null) { start(lastPick); return; } // 只回到第 0 帧，保留场景与高亮
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
     cellsEl.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
     invEl.textContent = "已重置。选一个场景。（绿格 = 已保留 [0..slow)，灰格 = 已弃 [slow..fast)）";
   });

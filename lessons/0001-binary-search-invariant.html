@@ -75,7 +75,8 @@ a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含�
       <button class="btn tgt" type="button">3</button>
       <button class="btn tgt" type="button">99</button>
     </span>
-    <button class="btn btn-primary" type="button" id="stepbtn" disabled>步进</button>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
     <button class="btn" type="button" id="resetbtn">重置</button>
   </div>
   <div class="cells" id="cells"></div>
@@ -202,9 +203,10 @@ a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含�
   var logEl = document.getElementById("simlog");
   var resEl = document.getElementById("simres");
   var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
   var resetBtn = document.getElementById("resetbtn");
   var convBtns = Array.prototype.slice.call(document.querySelectorAll('input[name=conv]'));
-  var S = null; // {t, closed, steps, found, i}
+  var S = null, lastPick = null; // {t, closed, steps, found, i}
 
   function plan(t, closed) {
     var steps = [], l = 0, r = closed ? N - 1 : N, found = -1, guard = 0;
@@ -231,6 +233,7 @@ a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含�
   }
 
   function start(t) {
+    lastPick = t;
     var closed = document.querySelector('input[name=conv]:checked').value === "1";
     var p = plan(t, closed);
     S = { t: t, closed: closed, steps: p.steps, found: p.found, i: 0 };
@@ -272,8 +275,16 @@ a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含�
       invEl.textContent = "区间已空（" + (S.closed ? "l > r" : "l ≥ r") + "）→ " + S.t + " 不在数组里。共比较 " + S.steps.length + " 次。";
       resEl.textContent = "✓ 返回 -1";
     }
+    backBtn.disabled = !S || S.i === 0;
     stepBtn.disabled = done();
   }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
 
   stepBtn.addEventListener("click", function () {
     if (!S || done()) return;
@@ -286,7 +297,8 @@ a[mid] ≠ t 说明 mid 已经比较过、被排除——闭区间的 r 是含�
   });
 
   resetBtn.addEventListener("click", function () {
-    S = null; stepBtn.disabled = true;
+    if (lastPick !== null) { start(lastPick); return; } // 只回到第 0 帧，保留目标与高亮
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
     cellsEl.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
     invEl.textContent = "已重置。选一个目标单号开始。";
   });
