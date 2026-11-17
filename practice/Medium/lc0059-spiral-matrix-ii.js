@@ -3,14 +3,43 @@
 // 流派声明（动笔前先选一种写在这）：______
 // JS 提醒：二维数组用 Array.from({ length: n }, () => new Array(n))，别 fill 共享引用
 var generateMatrix = function (n) {
-  // TODO 从这里开始
+  let top = 0;
+  let bottom = n - 1;
+  let left = 0;
+  let right = n - 1;
+  const matrix = Array.from({ length: n }, () => new Array(n).fill(0));
+  let num = 1;
+  while (num <= n * n) {
+    for (let i = left; i <= right; i++) matrix[top][i] = num++;
+    top++;
+    for (let i = top; i <= bottom; i++) matrix[i][right] = num++;
+    right--;
+    for (let i = right; i >= left; i--) matrix[bottom][i] = num++;
+    bottom--;
+    for (let i = bottom; i >= top; i--) matrix[i][left] = num++;
+    left++;
+  }
+  return matrix;
 };
 
 // ---------- 本地测试（提交力扣时只复制上面的 generateMatrix 函数）----------
 const CASES = [
-  { in: [3], want: [[1, 2, 3], [8, 9, 4], [7, 6, 5]] }, // 力扣示例
+  {
+    in: [3],
+    want: [
+      [1, 2, 3],
+      [8, 9, 4],
+      [7, 6, 5],
+    ],
+  }, // 力扣示例
   { in: [1], want: [[1]] }, // 最小规模：一圈只剩上段
-  { in: [2], want: [[1, 2], [4, 3]] }, // 偶数：无中心格
+  {
+    in: [2],
+    want: [
+      [1, 2],
+      [4, 3],
+    ],
+  }, // 偶数：无中心格
   {
     in: [4],
     want: [
