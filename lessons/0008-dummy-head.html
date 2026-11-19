@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0008 · 链表开场：虚拟头节点</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+
+<p class="kicker">阶段 1 · 链表 · 课程 0008 · 第 3 周（新专题开荒）</p>
+<h1>链表开场：虚拟头节点</h1>
+<p class="meta">约 25 分钟 · 前置：数组专题全部（不变量家族）·
+实战：LeetCode 203（Easy）+ 707（Medium）· 本地基建 <code>practice/_utils/list.js</code> 已就位</p>
+
+<h2>链表和数组差在哪（30 秒）</h2>
+<p>数组：内存连续，下标即位置，<strong>找得快、插删慢</strong>（要挪后面所有元素）。
+链表：每个节点 = 值 + <strong>指向下一个的引用</strong>，内存散落，<strong>只能从头顺着走</strong>，
+但插删只是「改两次指针」。JS 里没有内置链表——节点就是一个对象
+<code>{ val, next }</code>，<strong>对象引用就是指针</strong>（你天天写对象属性赋值，其实早就在操作指针）。</p>
+
+<h2>为什么需要虚拟头节点</h2>
+<p>链表删除/插入都需要<strong>操作目标的<strong>前驱</strong></strong>（前驱.next 指向谁，谁就被接入或摘除）。
+但真头节点<strong>没有前驱</strong>——于是「删头节点 / 在头部插入」处处要特判 <code>if (head === …)</code>。
+解法：开头放一个<strong>不存数据的哨兵节点 dummy</strong>，让真头节点也有前驱——
+<strong>用一个哨兵，换掉一整类特判</strong>。</p>
+
+<table>
+  <thead><tr><th>决策点</th><th>规则（203 移除链表元素）</th></tr></thead>
+  <tbody>
+    <tr><td>初始化</td><td><code>dummy = new ListNode(0, head)</code>，<code>cur = dummy</code></td></tr>
+    <tr><td>审查对象</td><td>永远是 <code>cur.next</code>（cur 自己已审查过）</td></tr>
+    <tr><td><code>cur.next.val === val</code></td><td>摘链：<code>cur.next = cur.next.next</code>——<strong>cur 原地不动</strong>（新接上的 next 还没审）</td></tr>
+    <tr><td>不相等</td><td><code>cur = cur.next</code> 前进一格</td></tr>
+    <tr><td>终止</td><td><code>cur.next === null</code>；返回 <code>dummy.next</code>（新真头）</td></tr>
+  </tbody>
+</table>
+
+<div class="keyidea">不变量（老朋友第五次登场）：<strong>cur 及其左侧的所有节点，值都不等于 val</strong>——
+cur 就是「已清洁区」与「待审区」的分界刀痕。快慢指针的 [0..slow)、二分的 [l..r]、
+滑窗的窗口、螺旋的剥圈边界，到链表上就是「cur 的位置」。模型换了衣裳，思想是同一件。</div>
+
+<div class="pitfall">链表题是错题本②（有思路写不出）的高发区——你 README 第一周就预言过。三个高频坑：
+① <strong>cur 与 cur.next 混用</strong>——删除永远操作 cur.next，因为你要的是前驱视角；
+② <strong>摘链后 cur 前进</strong>——[7,7,7] 全删场景立刻露馅（新 next 还没审就跳过了）；
+③ 返回值——返回 <code>dummy.next</code> 而不是 dummy（dummy 是哨兵不是数据）。</div>
+
+<h2>亲手走一遍：哨兵审查</h2>
+<p>两个预设：标准场景（尾部的 6）和<strong>照妖镜场景</strong>（[7,7,7,7] 全删——专门检验「摘链后不前进」）。
+每步先预测：这一步是摘链还是前进？cur 动不动？</p>
+
+<div class="sim no-print">
+  <div class="sim-controls">
+    <span>场景：
+      <button class="btn tgt" type="button" data-p="0">[1,2,6,3,4,5,6] 删 6</button>
+      <button class="btn tgt" type="button" data-p="1">[7,7,7,7] 删 7</button>
+    </span>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
+    <button class="btn" type="button" id="resetbtn">重置</button>
+  </div>
+  <div id="llviz" style="display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin:1rem 0;"></div>
+  <div class="sim-note" id="invariant">先选一个场景。（D = 虚拟头；▼ = cur 停靠处；虚线框 = 正在审查的 cur.next）</div>
+  <ol class="sim-log" id="simlog"></ol>
+  <p class="sim-result" id="simres"></p>
+</div>
+
+<h2>检查站：五道题</h2>
+
+<div class="quiz" data-quiz>
+<script type="application/json">
+{
+  "questions": [
+    {
+      "q": "虚拟头节点 dummy 的核心作用是？",
+      "options": [
+        { "t": "加快链表的遍历速度", "why": "错。dummy 不参与遍历提速，链表照样只能从头一步步走。" },
+        { "t": "统一头部操作免特判", "why": "对。真头没有前驱，头部增删处处要 if 特判；dummy 让所有节点（含真头）都有前驱，一套逻辑走天下。" },
+        { "t": "让链表元素有序排列", "why": "错。dummy 与有序毫无关系，链表顺序由插入顺序决定。" },
+        { "t": "减少内存的占用大小", "why": "错。反而多花一个节点的内存，买的是逻辑统一不是空间。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "203 中，cur 停在什么位置？",
+      "options": [
+        { "t": "已审查段的末节点", "why": "对。cur 的左侧（含自身）全部审查过且不等于 val；待审的是 cur.next。删除需要前驱，cur 就是前驱。" },
+        { "t": "待审查的那个节点", "why": "错。若 cur 是待审节点，它的前驱就丢了——摘链需要 cur 停在前驱、审 next。" },
+        { "t": "链表最末尾的节点", "why": "错。那是遍历结束的位置；审查过程中 cur 在中部游走。" },
+        { "t": "永远是虚拟头节点", "why": "错。cur 从 dummy 出发但会前进，否则只能审第一个节点。" }
+      ],
+      "answer": 0
+    },
+    {
+      "q": "摘链（cur.next = cur.next.next）之后，cur 应该？",
+      "options": [
+        { "t": "立刻前进一格", "why": "错。新接上的 cur.next 还没审查就跳过——[7,7,7] 会漏删中间的 7。" },
+        { "t": "退回上一节点", "why": "错。链表没有回退指针（那是双向链表的事），且也没必要回。" },
+        { "t": "原地不动再审查", "why": "对。摘链后 cur.next 换成了新节点，它还没审——停在原地再审一次，连删场景靠的就是这个。" },
+        { "t": "直接返回结果", "why": "错。后面可能还有目标值，返回要等 cur.next 为空。" }
+      ],
+      "answer": 2
+    },
+    {
+      "q": "707 里 dummy 让哪个操作不再特殊？",
+      "options": [
+        { "t": "尾部插入更快完成", "why": "错。尾插仍要走到尾，dummy 帮的是头部不是尾部。" },
+        { "t": "随机访问变成常量", "why": "错。链表没有随机访问，get(index) 永远要 O(index) 走过去。" },
+        { "t": "节点数量自动维护", "why": "错。size 要自己 ++/--，dummy 不会替你记账。" },
+        { "t": "头部插入不再特殊", "why": "对。addAtHead(1) 就等于 addAtIndex(0, 1)，都从 dummy 后接入——头与非头统一成同一段代码。" }
+      ],
+      "answer": 3
+    },
+    {
+      "q": "JS 里链表节点的本质是？",
+      "options": [
+        { "t": "对象引用即指针", "why": "对。{ val, next } 里的 next 存的是另一个对象的引用；改 next 就是改指针指向——你早就天天在用指针了。" },
+        { "t": "数组下标的别名", "why": "错。链表节点和数组下标毫无关系，它不占连续内存。" },
+        { "t": "语言内置的类型", "why": "错。JS 没有内置链表类型，ListNode 是我们自己定义的普通构造函数。" },
+        { "t": "原型链上的环节", "why": "错。原型链是继承机制，与数据结构的链表只是名字像。" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+</script>
+</div>
+
+<h2>实战</h2>
+<div class="task">
+  <p>两道，链表题第一次动笔——预感一下 README 预言的「② 有思路写不出」：</p>
+  <ul>
+    <li><strong>203 移除链表元素</strong>（先做）：
+    <a href="../practice/Easy/lc0203-remove-linked-list-elements.js">practice/Easy/lc0203</a> →
+    提交<a href="https://leetcode.cn/problems/remove-linked-list-elements/">力扣 203</a>；</li>
+    <li><strong>707 设计链表</strong>：
+    <a href="../practice/Medium/lc0707-design-linked-list.js">practice/Medium/lc0707</a> →
+    提交<a href="https://leetcode.cn/problems/design-linked-list/">力扣 707</a>——
+    注意本地 harness 会连「各步返回值 + 最终链表」一起验，且读 <code>inst.dummy.next</code> 对终态比对，按脚手架注释的设计写即可。</li>
+  </ul>
+  <p><strong>复习提醒</strong>：59 的 D+3 是明天（11-20，计数流派保持）；11-22 三连（33/11/15 的 D+7）；12-02 是 34 的 D+21 毕业轮。</p>
+  <details class="problem">
+    <summary>📋 完整题面 · 203 移除链表元素（Easy）</summary>
+    <p>给你一个链表的头节点 <code>head</code> 和一个整数 <code>val</code>，请你删除链表中所有满足
+    <code>Node.val == val</code> 的节点，并返回<strong>新的头节点</strong>。</p>
+    <pre>示例 1：head = [1,2,6,3,4,5,6], val = 6 → [1,2,3,4,5]
+示例 2：head = [], val = 1              → []
+示例 3：head = [7,7,7,7], val = 7       → []</pre>
+    <p>提示：列表中的节点数在 [0, 10⁴] 范围内；1 ≤ Node.val ≤ 50；0 ≤ val ≤ 50。</p>
+  </details>
+  <details class="problem">
+    <summary>📋 完整题面 · 707 设计链表（Medium）</summary>
+    <p>设计链表的实现。可以选择单链表或双链表。单链表中的节点应该具有两个属性：<code>val</code> 和
+    <code>next</code>。你的实现需要支持以下操作：</p>
+    <ul>
+      <li><code>get(index)</code>：获取链表中第 index 个节点的值（从 0 开始）。如果索引无效，返回 <code>-1</code>；</li>
+      <li><code>addAtHead(val)</code>：在第一个元素之前添加；</li>
+      <li><code>addAtTail(val)</code>：追加到最后一个元素之后；</li>
+      <li><code>addAtIndex(index, val)</code>：在第 index 个元素<strong>之前</strong>添加（index 等于链表长度时追加；超过长度则不插入）；</li>
+      <li><code>deleteAtIndex(index)</code>：删除第 index 个元素（无效则不删）。</li>
+    </ul>
+    <p>提示：所有操作中 index 均从 0 开始；1 ≤ val ≤ 1000；调用次数 ≤ 2000。</p>
+  </details>
+</div>
+
+<h2>延伸</h2>
+<p><strong>Primary source</strong>：<a href="https://programmercarl.com/algo/">随想录总览 → 链表章</a>（左侧导航进入；本章从 203 与 707 开讲，与本课同序）+
+<a href="https://leetcode.cn/problems/remove-linked-list-elements/solutions/">力扣 203 官方题解</a>。</p>
+
+<div class="keyidea">链表第一课最大的敌人是「指针晕」——模拟器里 ▼ 挪动前，永远先说一句
+「cur 现在是谁的前驱、cur.next 是谁」。说不清就回来问。</div>
+
+<nav class="lesson-nav">
+  <a href="0007-spiral-matrix.html">← 0007 螺旋矩阵（数组收官）</a>
+  <span class="disabled">下一课 0009 · 反转链表（未解锁）</span>
+</nav>
+
+<footer>
+  <p>algorithm-road · 阶段 1 · 链表 · 2026-11-19 · 打卡由 agent 记账。</p>
+</footer>
+
+<script src="../assets/sim.js"></script>
+<script src="../assets/quiz.js"></script>
+<script>
+(function () {
+  "use strict";
+  var PRESETS = [
+    { arr: [1, 2, 6, 3, 4, 5, 6], val: 6 },
+    { arr: [7, 7, 7, 7], val: 7 },
+  ];
+  var viz = document.getElementById("llviz");
+  var invEl = document.getElementById("invariant");
+  var logEl = document.getElementById("simlog");
+  var resEl = document.getElementById("simres");
+  var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
+  var resetBtn = document.getElementById("resetbtn");
+  var S = null, lastPick = null;
+
+  // steps: {arr 快照, curPos(dummy=-1), examIdx, action: 'examine'|'unlink'|'advance', note}
+  function plan(p) {
+    var arr = p.arr.slice(), steps = [], cur = -1; // curPos: -1 = dummy
+    while (true) {
+      var exam = cur + 1;
+      if (exam >= arr.length) { steps.push({ arr: arr.slice(), curPos: cur, examIdx: -1, action: "done", note: "cur.next 为空 → 审查结束，返回 dummy.next" }); break; }
+      steps.push({ arr: arr.slice(), curPos: cur, examIdx: exam, action: "examine", note: "审查 cur.next = " + arr[exam] + (arr[exam] === p.val ? "（命中！准备摘链，cur 不动）" : "（未命中，cur 前进）") });
+      if (arr[exam] === p.val) {
+        arr.splice(exam, 1);
+        steps.push({ arr: arr.slice(), curPos: cur, examIdx: exam, action: "unlink", note: "摘链：cur.next = cur.next.next，节点 " + p.val + " 出列；cur 原地不动" });
+      } else {
+        cur = exam;
+        steps.push({ arr: arr.slice(), curPos: cur, examIdx: -1, action: "advance", note: "前进：cur ← cur.next（" + arr[cur] + " 已审查合格）" });
+      }
+    }
+    return steps;
+  }
+
+  function start(idx) {
+    lastPick = idx;
+    var p = PRESETS[idx];
+    S = { p: p, steps: plan(p), i: 0 };
+    logEl.innerHTML = ""; resEl.textContent = "";
+    stepBtn.disabled = false;
+    render();
+  }
+
+  function done() { return S.i >= S.steps.length; }
+
+  function render() {
+    if (!S) { viz.innerHTML = ""; return; }
+    var st = S.steps[S.i];
+    var shown = st ? st.arr : S.steps[S.steps.length - 1].arr;
+    var curPos = st ? st.curPos : S.steps[S.steps.length - 1].curPos;
+    var examIdx = st ? st.examIdx : -1;
+    var html = "";
+    for (var k = -1; k < shown.length; k++) {
+      var isDummy = k === -1;
+      var val = isDummy ? "D" : shown[k];
+      var cls = "cell" + (isDummy ? "" : " in");
+      if (!isDummy && k === examIdx) cls += " div";
+      var mk = (k === curPos) ? "cur" : "";
+      html += '<div class="' + cls + '"><div class="v">' + val + '</div><div class="mk">' + mk + '</div></div>';
+      if (k < shown.length - 1) html += '<div style="color:var(--accent);font-family:var(--mono);">→</div>';
+    }
+    if (shown.length === 0) html += '<div class="cell"><div class="v">∅</div><div class="mk"></div></div>';
+    viz.innerHTML = html;
+    if (st) {
+      invEl.textContent = "不变量：cur 及其左侧全部 ≠ " + S.p.val + "。先预测：摘链还是前进？cur 动不动？";
+    } else {
+      var fin = S.steps[S.steps.length - 1].arr;
+      invEl.textContent = "返回 dummy.next → " + (fin.length ? JSON.stringify(fin) : "null（全删）") + "，共 " + (S.steps.length - 1) + " 步。";
+      resEl.textContent = "✓ 203 完成";
+    }
+    backBtn.disabled = !S || S.i === 0;
+    stepBtn.disabled = done();
+  }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
+
+  stepBtn.addEventListener("click", function () {
+    if (!S || done()) return;
+    var st = S.steps[S.i];
+    S.i++;
+    var li = document.createElement("li");
+    li.textContent = st.note;
+    logEl.appendChild(li);
+    render();
+  });
+
+  resetBtn.addEventListener("click", function () {
+    if (lastPick !== null) { start(lastPick); return; }
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
+    viz.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
+    invEl.textContent = "已重置。选一个场景。";
+  });
+
+  simPresets(document, function (b) { start(parseInt(b.getAttribute("data-p"), 10)); });
+})();
+</script>
+</main>
+</body>
+</html>
