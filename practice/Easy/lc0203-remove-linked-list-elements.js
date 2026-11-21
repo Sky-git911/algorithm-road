@@ -5,6 +5,13 @@ const { ListNode, toList, toArray } = require('../_utils/list');
 
 var removeElements = function (head, val) {
   // TODO 从这里开始（第一行就该是 const dummy = new ListNode(0, head)）
+  let dummy = new ListNode(0, head);
+  let cur = dummy;
+  while (cur.next) {
+    if (cur.next.val === val) cur.next = cur.next.next;
+    else cur = cur.next;
+  }
+  return dummy.next;
 };
 
 // ---------- 本地测试（提交力扣时只复制上面的 removeElements 函数）----------
