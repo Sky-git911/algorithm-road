@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0010 · 环形链表：快慢指针的本职</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+
+<p class="kicker">阶段 1 · 链表 · 课程 0010 · 第 3 周</p>
+<h1>环形链表：快慢指针的本职</h1>
+<p class="meta">约 25 分钟 · 前置：0004（快慢指针）+ 0009（改链三步）·
+实战：LeetCode 141（Easy）+ 142（Medium）· 开课仪式：口述递归版三处自补</p>
+
+<h2>开课仪式：先答 0009 留的三处自补</h2>
+<p>别往下滚。0009 的尾巴让你给 <code>reverseListRec</code> 补三个空、亲手验一遍——先口述，再对照：</p>
+<ol>
+  <li><strong>何时不再递归</strong>：<code>head === null || head.next === null</code> 直接返回 head——
+  空表和单节点天然已「反转」；再递归一层就要对 null 取 next，当场炸。</li>
+  <li><strong>返回谁</strong>：<code>newHead</code>。head 已沦为整条链的尾，返回 head 等于交出去一半链表。</li>
+  <li><strong>后两行能否换序</strong>：不能。先 <code>head.next = null</code> 的话，下一行
+  <code>head.next.next</code> 就是对 null 取属性——三步是依赖链，每一步的输入是上一步的保证
+  （quiz Q3 补课的续集：依赖链可推导、不可背）。</li>
+</ol>
+<div class="keyidea">递归版的价值不在工程（链一长就栈溢出，工程默认迭代），在于它逼你换一种眼光：
+<strong>一条链 = 一个头节点 + 一条更短的链</strong>。今天 142 的入口推导用的正是同一种
+「把结构缩小一层再看」的眼光。</div>
+
+<h2>快慢指针，回到本职</h2>
+<p>0004 里快慢指针在数组上干的是读写分工的粗活（fast 读、slow 写）。今天它回到本职：
+<strong>追及问题</strong>。slow 每轮走 1 步、fast 每轮走 2 步——</p>
+<ul>
+  <li><strong>无环</strong>：fast 先撞到尾，循环退出，返回 false；</li>
+  <li><strong>有环</strong>：两个都进环，fast 每轮把与 slow 的距离拉近 1 格。</li>
+</ul>
+<p>有环必相遇——但这句话和 11 的「移短板必不增」同族：<strong>排除证明是证出来的，不是感觉出来的</strong>。
+证明过，才配 O(1) 空间：</p>
+<div class="keyidea">fast 不会跨过 slow。相对速度恒为 1 → <strong>距离每轮恰好减 1</strong>；
+距离是整数 → 必先到 0，不可能从 1 直接跳到 −1。这就是 141 的口述 gate。</div>
+
+<h2>决策对照表（141 判环）</h2>
+<table>
+  <thead><tr><th>决策点</th><th>规则（141 环形链表）</th></tr></thead>
+  <tbody>
+    <tr><td>初始化</td><td><code>slow = head; fast = head</code>（同一起跑线；不是 19 题「提前量」姿势，别混）</td></tr>
+    <tr><td>循环条件</td><td><code>fast && fast.next</code> —— fast 一步吃两格，<strong>两道闸都得过</strong>才准走</td></tr>
+    <tr><td>走法</td><td><code>slow = slow.next; fast = fast.next.next</code>（只走不改——全程零改链）</td></tr>
+    <tr><td>判定</td><td><code>slow === fast</code> —— 同一节点（引用相等），不是同值</td></tr>
+    <tr><td>终止</td><td>闸关（fast 或 fast.next 为 null）→ 无环；同格 → 有环</td></tr>
+    <tr><td>边界</td><td>空表：fast 为 null，循环不进；单节点无环：fast.next 为 null；
+    单节点自环：一轮走完同格——模板零特判全覆盖（连续剧第四集）</td></tr>
+  </tbody>
+</table>
+
+<h2>142 的两段式：一道代数题</h2>
+<p>判出有环只拿一半分——142 要交出<strong>环入口</strong>。相遇后别动 slow，放第三个指针
+p1 从 head 出发，和 slow <strong>同速</strong>走：相遇处就是入口。为什么？纸上推一遍
+（环长 = b + c）：</p>
+<table>
+  <thead><tr><th>记号</th><th>含义</th></tr></thead>
+  <tbody>
+    <tr><td>a</td><td>head → 入口的步数</td></tr>
+    <tr><td>b</td><td>入口 → 相遇点的步数</td></tr>
+    <tr><td>c</td><td>相遇点绕回入口的步数（环长 = b + c）</td></tr>
+    <tr><td>slow 路程</td><td>a + b——slow 进环后<strong>一圈没跑完就被追上</strong>
+    （fast 早已进环等着，每轮拉近 1 格，最坏落后环长 − 1 格）</td></tr>
+    <tr><td>fast 路程</td><td>a + b + n(b+c)，n ≥ 1（fast 多绕的整圈）</td></tr>
+    <tr><td>速度 2 倍</td><td>2(a+b) = a + b + n(b+c) ⇒ <strong>a = c + (n−1)(b+c)</strong></td></tr>
+  </tbody>
+</table>
+<div class="keyidea">a = c + 整数圈 ⇒ <strong>head 到入口的距离 ≡ 相遇点到入口的距离（mod 环长）</strong>。
+同速出发，少绕的整数圈恰好抵消——必在入口相遇。边界：入口就是 head（pos = 0）时，
+相遇点就是 head，第二段循环零次直接返回——还是零特判。
+这道代数就是快慢法 O(1) 空间买到的全部东西：别背结论，推它。</div>
+
+<div class="pitfall">四个高频坑：
+① <strong>循环条件只写 fast</strong>——<code>fast.next.next</code> 对 null 取属性当场炸；
+fast 一步吃两格，两道闸都得有；
+② <strong>用 <code>slow.val === fast.val</code> 判相遇</strong>——环里可能有同值节点；
+要判身份（<code>===</code> 引用）：JS 里对象 <code>===</code> 比的是「同一个东西」，不是「内容一样」；
+③ <strong>142 相遇后让 fast 继续 2 倍速追</strong>——那还是 141 的追及，永远绕圈；第二段必须同速；
+④ <strong>想给空表/单节点加特判</strong>——先问模板能不能吞（连续剧第四集：三处边界全被模板吞掉）。</div>
+
+<h2>亲手走一遍：追及与入口</h2>
+<p>三个预设：力扣示例 1（环）、示例 2（head 自环——入口就是 head）、无环直线。
+<strong>每帧是动作前状态</strong>——点「下一步」前，先说出 slow/fast 这轮各走到哪、距离缩几格。</p>
+
+<div class="sim no-print">
+  <div class="sim-controls">
+    <span>场景：
+      <button class="btn tgt" type="button" data-p="0">示例1 · 环 pos=1</button>
+      <button class="btn tgt" type="button" data-p="1">示例2 · head 自环</button>
+      <button class="btn tgt" type="button" data-p="2">无环直线</button>
+    </span>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
+    <button class="btn" type="button" id="resetbtn">重置</button>
+  </div>
+  <div id="llviz" style="display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin:1rem 0;"></div>
+  <div class="sim-note" id="invariant">先选一个场景。（↩ = 尾节点接回入口；绿色同格 = 判定命中）</div>
+  <ol class="sim-log" id="simlog"></ol>
+  <p class="sim-result" id="simres"></p>
+</div>
+
+<h2>检查站：五道题</h2>
+
+<div class="quiz" data-quiz>
+<script type="application/json">
+{
+  "questions": [
+    {
+      "q": "进环之后，fast 每轮比 slow 多走 1 格，为什么永远不会一步跨过 slow？",
+      "options": [
+        { "t": "fast 会自动减速，在环里等着 slow 追上", "why": "错。fast 不减速，快慢恒定——是相对速度把距离拉近的，不是谁在让。" },
+        { "t": "距离每轮恰好缩小 1，整数距离必先到 0", "why": "对。相对速度恒为 1，距离逐轮 −1；整数距离必先落到 0，不可能从 1 直接跳到 −1——排除证明，不是感觉。" },
+        { "t": "环的长度是偶数，奇偶性保证不会跨过", "why": "错。环长奇偶无关——相对速度是 1，距离逐格缩，任何环长都同理。" },
+        { "t": "slow 会在环入口处停下，等 fast 转回来", "why": "错。slow 全程一直在走，从未停下；相遇位置也不在入口，而在环内某处。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "判环循环的条件为什么是 fast && fast.next，而不是只写 fast？",
+      "options": [
+        { "t": "slow 也可能越界，多加一道保险更稳妥", "why": "错。slow 永远落后 fast，fast 存在则 slow 必存在——slow 不需要闸。" },
+        { "t": "空表直接抛错，把问题暴露在第一行", "why": "错。方向反了：两道闸正是让空表、单节点无环被模板安静吞掉（连续剧第四集）。" },
+        { "t": "fast 一步吃两格，两格都得先确认存在", "why": "对。fast.next.next 之前要过两道闸——fast 本身存在、fast.next 存在；缺任何一道都是对 null 取属性。" },
+        { "t": "判环需要同时验证两个方向的指针", "why": "错。单链表只有一个方向；两道闸是越界保险，与「方向」无关。" }
+      ],
+      "answer": 2
+    },
+    {
+      "q": "相遇判定为什么用 slow === fast，而不是 slow.val === fast.val？",
+      "options": [
+        { "t": "val 会随遍历被修改，中途比较不可信", "why": "错。本题只走不改，val 全程原值——与修改无关。" },
+        { "t": "环里可能有同值节点，判的是同一身份", "why": "对。JS 对象 === 比引用：slow === fast 是「同一格」，val 相等只是「同号码」——环里完全可以有两个值相同的节点。" },
+        { "t": "=== 比 val 比较快，性能上更划算", "why": "错。不是性能问题——val 比较在某些输入下会给出错误答案，性能只是噪声。" },
+        { "t": "fast 走得快，val 总是滞后一拍才更新", "why": "错。val 是静态属性，不存在滞后——引用与值在这里没有时间差。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "142 相遇之后，两个同速指针分别从哪里出发？",
+      "options": [
+        { "t": "都从相遇点出发，再绕环一圈验证入口", "why": "错。同点同速永远同行，绕一万圈也回不到 head——缺的那段路在环外。" },
+        { "t": "一个从 head，另一个每轮走两步去追", "why": "错。又变回 141 的 2 倍速追及——那是判环不是找入口，第二段必须同速。" },
+        { "t": "head 与尾节点，一个正向一个反向夹击", "why": "错。单链表没有反向，尾节点在环里也拿不到——对撞是数组章的武器，这里用不上。" },
+        { "t": "head 与相遇点——a = c + (n−1) 圈", "why": "对。a ≡ c（mod 环长）：同速出发，少绕的整数圈恰好抵消，必在入口相遇。" }
+      ],
+      "answer": 3
+    },
+    {
+      "q": "用哈希 Set 解 141/142，下面哪句成立？",
+      "options": [
+        { "t": "Set 存见过的节点；重逢即有环，重逢处即入口", "why": "对。第一次「再见到」的节点就是环入口——142 直接返回它。时间 O(n)、空间 O(n)，是快慢法的合法平替。" },
+        { "t": "Set 只能存 val，存节点引用会内存泄漏", "why": "错。Set 存的就是节点引用（142 正靠这个返回节点）；要防泄漏还有 WeakSet 可选——「泄漏」说法无据。" },
+        { "t": "Set 法空间 O(1)，比快慢指针更省内存", "why": "错。恰相反：Set 最坏 O(n) 空间，快慢指针 O(1)——那道 a = c + (n−1)(b+c) 的代数买的就是这个差。" },
+        { "t": "Set 法更快，快慢指针写法必然超时", "why": "错。两者都是 O(n) 时间；快慢常数还更小，不存在「必然超时」。" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+</script>
+</div>
+
+<h2>实战</h2>
+<div class="task">
+  <ul>
+    <li><strong>141 环形链表</strong>：
+    <a href="../practice/Easy/lc0141-linked-list-cycle.js">practice/Easy/lc0141</a> →
+    提交<a href="https://leetcode.cn/problems/linked-list-cycle/">力扣 141</a>。
+    动笔前口述两句：①进环后 fast 为什么不会跨过 slow；②循环条件为什么是两道闸。
+    空表/单节点<strong>不许特判</strong>。</li>
+    <li><strong>142 环形链表 II</strong>：
+    <a href="../practice/Medium/lc0142-linked-list-cycle-ii.js">practice/Medium/lc0142</a> →
+    提交<a href="https://leetcode.cn/problems/linked-list-cycle-ii/">力扣 142</a>。
+    动笔前在纸上推 <code>a = c + (n−1)(b+c)</code>（三行代数，不许跳步），推完再写码；
+    第二段两指针<strong>同速</strong>。脚手架按<strong>节点身份</strong>断言（返回「那一个」节点，不是同值节点）。</li>
+  </ul>
+  <p><strong>复习提醒</strong>：<strong>707 的 D+3 就是今天</strong>——本地盲写：把
+  <a href="../practice/Medium/lc0707-design-linked-list.js">lc0707</a> 解法区清空重写
+  （不看旧码、不看课程），node 跑 8/8；跑完后口述两连问：
+  get(-1) 为什么会返头值？addAtIndex(-1, v) 为什么反而做对？
+  （模板语义白送 vs 该挡的 guard——昨天说的「gate 要有区分度」，就用它）。</p>
+  <details class="problem">
+    <summary>📋 完整题面 · 141 环形链表（Easy）</summary>
+    <p>给你一个链表的头节点 <code>head</code>，判断链表中是否有环。</p>
+    <p>如果链表中有某个节点，可以通过连续跟踪 <code>next</code> 指针再次到达，则链表中存在环。
+    为了表示给定链表中的环，评测系统内部使用整数 <code>pos</code> 来表示链表尾连接到链表中的位置
+    （索引从 0 开始）。<strong>注意：<code>pos</code> 不作为参数进行传递</strong>，仅仅是为了标识链表的实际情况。</p>
+    <p>如果链表中存在环，则返回 <code>true</code>；否则，返回 <code>false</code>。</p>
+    <pre>示例 1：head = [3,2,0,-4]，pos = 1  → true（尾节点接到下标 1）
+示例 2：head = [1,2]，pos = 0       → true（尾节点接到下标 0）
+示例 3：head = [1]，pos = -1        → false（无环）</pre>
+    <p>提示：链表中节点的数目范围是 [0, 10⁴]；-10⁵ ≤ Node.val ≤ 10⁵；
+    pos 为 -1 或者链表中的一个有效索引。</p>
+    <p><strong>进阶</strong>：你能用 O(1)（即，常量）内存解决此问题吗？</p>
+  </details>
+  <details class="problem">
+    <summary>📋 完整题面 · 142 环形链表 II（Medium）</summary>
+    <p>给定一个链表的头节点 <code>head</code>，返回链表开始入环的第一个节点。
+    <em>如果链表无环，则返回 <code>null</code>。</em></p>
+    <p>如果链表中有某个节点，可以通过连续跟踪 <code>next</code> 指针再次到达，则链表中存在环。
+    为了表示给定链表中的环，评测系统内部使用整数 <code>pos</code> 来表示链表尾连接到链表中的位置
+    （索引从 0 开始）。如果 <code>pos</code> 是 <code>-1</code>，则在该链表中没有环。
+    <strong>注意：<code>pos</code> 不作为参数进行传递</strong>，仅仅是为了标识链表的实际情况。</p>
+    <p><strong>不允许修改链表。</strong></p>
+    <pre>示例 1：head = [3,2,0,-4]，pos = 1  → 返回索引为 1 的链表节点
+示例 2：head = [1,2]，pos = 0       → 返回索引为 0 的链表节点
+示例 3：head = [1]，pos = -1        → 返回 null</pre>
+    <p>提示：链表中节点的数目范围是 [0, 10⁴]；-10⁵ ≤ Node.val ≤ 10⁵；
+    pos 为 -1 或者链表中的一个有效索引。</p>
+    <p><strong>进阶</strong>：你是否可以使用 O(1) 空间解决此问题？</p>
+  </details>
+</div>
+
+<h2>延伸</h2>
+<p><strong>Primary source</strong>：<a href="https://programmercarl.com/algo/">随想录总览 → 链表章</a>
+（左侧导航进入，环形链表一节与本课同序；142 的推导以随想录版为准）+
+<a href="https://leetcode.cn/problems/linked-list-cycle/solutions/">力扣 141 官方题解</a>。</p>
+<p><strong>工程备注</strong>：本题全程零改链——纯「走查」，是 707「走与改分离」的极致形态；
+循环条件、判定、终止全是<strong>判定驱动</strong>（走不死就继续走），和 59 的顺序驱动摆一圈正好相对。
+哈希 Set 法是合法平替：时间同为 O(n)、空间 O(n)，快慢 O(1)——空间差就是那道代数买来的。
+下一课 0011 相交链表：快慢/双指针换个用法（11-25/26 与 19 删倒数第 N 同排）。</p>
+
+<div class="keyidea">模拟器里每轮开跑前，先说出：两个指针现在差几格、这轮拉近几格、判定发生在什么时候
+（走完之后）。说不清就回来问——随时问老师。</div>
+
+<nav class="lesson-nav">
+  <a href="0009-reverse-linked-list.html">← 0009 反转链表</a>
+  <span class="disabled">下一课 0011 · 相交链表（未解锁）</span>
+</nav>
+
+<footer>
+<p>algorithm-road · 阶段 1 · 链表 · 2026-11-24 开课 · 打卡由 agent 记账。</p>
+</footer>
+
+<script src="../assets/sim.js"></script>
+<script src="../assets/quiz.js"></script>
+<script>
+(function () {
+  "use strict";
+  var PRESETS = [
+    { arr: [3, 2, 0, -4], pos: 1 },
+    { arr: [1, 2], pos: 0 },
+    { arr: [1, 2, 3], pos: -1 },
+  ];
+  var viz = document.getElementById("llviz");
+  var invEl = document.getElementById("invariant");
+  var logEl = document.getElementById("simlog");
+  var resEl = document.getElementById("simres");
+  var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
+  var resetBtn = document.getElementById("resetbtn");
+  var S = null, lastPick = null;
+
+  // 环内走一步：直链出界为 null；环从尾部接回入口 pos
+  function nxt(p, i) {
+    if (i === null) return null;
+    if (p.pos < 0) return i + 1 < p.arr.length ? i + 1 : null;
+    return i + 1 < p.arr.length ? i + 1 : p.pos;
+  }
+
+  // 帧一律是动作前状态；meet/entry/straight 帧 = 判定发生的那一帧
+  function plan(p) {
+    var steps = [], s = 0, f = 0, k = 0, s2, f2;
+    // 第一段：141 追及判环
+    for (;;) {
+      if (f === null || nxt(p, f) === null) {
+        steps.push({
+          straight: true, s: s, f: f,
+          note: "第 " + (k + 1) + " 次判定（动作前）：fast 在下标 " + f + "，fast.next = null → 两道闸有一道已关 → 循环退出：无环，返回 false",
+        });
+        return steps;
+      }
+      steps.push({
+        s: s, f: f,
+        note: "第 " + (k + 1) + " 轮（动作前）：slow 在下标 " + s + "、fast 在下标 " + f + (k === 0 ? "（起点同格不算相遇——判定发生在每轮走完之后）。" : "。") + "先预测：走完这轮 slow 到哪、fast 到哪？",
+      });
+      s2 = nxt(p, s);
+      f2 = nxt(p, nxt(p, f));
+      k++;
+      if (s2 === f2) {
+        steps.push({
+          meet: true, s: s2, f: s2,
+          note: "走完这轮：slow 与 fast 同在下标 " + s2 + " → 相遇 → 有环，141 返回 true",
+        });
+        break;
+      }
+      s = s2; f = f2;
+    }
+    // 第二段：142 两段式找入口（仅环形场景）
+    var p1 = 0, p2 = s2, t = 0;
+    if (p1 === p2) {
+      steps.push({
+        phase2: true, entry: true, p1: p1, p2: p2,
+        note: "两段式：p1 从 head 出发、p2 留在相遇点——开局 p1 === p2（相遇点就是 head）→ 直接返回下标 0，第二段循环零次",
+      });
+      return steps;
+    }
+    for (;;) {
+      steps.push({
+        phase2: true, p1: p1, p2: p2,
+        note: "两段式第 " + (t + 1) + " 步（动作前）：p1 在下标 " + p1 + "、p2 在下标 " + p2 + "。先预测：同速各走一步，相遇在哪？",
+      });
+      p1 = nxt(p, p1);
+      p2 = nxt(p, p2);
+      t++;
+      if (p1 === p2) {
+        steps.push({
+          phase2: true, entry: true, p1: p1, p2: p2,
+          note: "相遇于下标 " + p1 + " = 环入口（值 " + p.arr[p1] + "）→ 142 返回它",
+        });
+        return steps;
+      }
+    }
+  }
+
+  function start(idx) {
+    lastPick = idx;
+    var p = PRESETS[idx];
+    S = { p: p, steps: plan(p), i: 0 };
+    logEl.innerHTML = ""; resEl.textContent = "";
+    stepBtn.disabled = false;
+    render();
+  }
+
+  function done() { return S.i >= S.steps.length; }
+
+  function cell(v, mk, found, dashed) {
+    var cls = "cell" + (v === "∅" ? "" : " in") + (found ? " found" : "") + (dashed ? " div" : "");
+    return '<div class="' + cls + '"><div class="v">' + v + '</div><div class="mk">' + (mk || "") + '</div></div>';
+  }
+  function arrow(sym) {
+    return '<div style="color:var(--accent);font-family:var(--mono);">' + sym + "</div>";
+  }
+
+  function render() {
+    if (!S) { viz.innerHTML = ""; return; }
+    var p = S.p, a = p.arr, n = a.length;
+    var st = S.steps[S.i];
+    var html = "";
+    for (var j = 0; j < n; j++) {
+      var mk = "", found = false;
+      if (st.phase2) {
+        if (j === st.p1 && j === st.p2) mk = st.entry ? "p1·p2·入口" : "p1·p2";
+        else if (j === st.p1) mk = "p1";
+        else if (j === st.p2) mk = "p2";
+        if (st.entry && j === p.pos) { found = true; mk = "入口"; }
+      } else {
+        if (j === st.s && j === st.f) mk = st.meet ? "slow·fast" : "起点";
+        else if (j === st.s) mk = "slow";
+        else if (j === st.f) mk = "fast";
+        if (st.meet && j === st.s) found = true;
+      }
+      html += cell(a[j], mk, found, st.phase2 && j === p.pos);
+      if (j < n - 1) html += arrow("→");
+    }
+    if (p.pos >= 0) {
+      html += '<div style="color:var(--accent);font-family:var(--mono);font-size:0.8rem;align-self:center;">↩ 下标 ' + p.pos + '</div>';
+    } else if (st.straight) {
+      html += arrow("→") + cell("∅", "null", false, true);
+    }
+    viz.innerHTML = html;
+    invEl.textContent = st.phase2
+      ? "第二段依据 a ≡ c（mod 环长）：p1 落后的整数圈恰好抵消——先预测相遇点。"
+      : "追及依据：fast 相对 slow 每轮拉近 1 格——整数距离必先到 0，不会跨过。先预测这轮走向。";
+    if (st.meet) resEl.textContent = "✓ 141 完成：有环";
+    else if (st.entry) resEl.textContent = "✓ 142 完成：入口 = 下标 " + p.pos;
+    else if (st.straight) resEl.textContent = "✓ 无环：循环退出，返回 false";
+    else resEl.textContent = "";
+    backBtn.disabled = !S || S.i === 0;
+    stepBtn.disabled = done();
+  }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
+
+  stepBtn.addEventListener("click", function () {
+    if (!S || done()) return;
+    var st = S.steps[S.i];
+    S.i++;
+    var li = document.createElement("li");
+    li.textContent = st.note;
+    logEl.appendChild(li);
+    render();
+  });
+
+  resetBtn.addEventListener("click", function () {
+    if (lastPick !== null) { start(lastPick); return; }
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
+    viz.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
+    invEl.textContent = "已重置。选一个场景。";
+  });
+
+  simPresets(document, function (b) { start(parseInt(b.getAttribute("data-p"), 10)); });
+})();
+</script>
+</main>
+</body>
+</html>
