@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0009 · 反转链表：改链三步的主场</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+
+<p class="kicker">阶段 1 · 链表 · 课程 0009 · 第 3 周</p>
+<h1>反转链表：改链三步的主场</h1>
+<p class="meta">约 25 分钟 · 前置：0008（虚拟头节点 + 改链三步）·
+实战：LeetCode 206（Easy）· 开课仪式：默写改链三步</p>
+
+<h2>开课仪式：先默写改链三步</h2>
+<p>别往下滚。拿纸笔，把「改链三步」默写出来——<strong>昨天 quiz 的 Q3 你错的就是它</strong>。
+写完再对照：</p>
+<p><strong>存 next → 改指向 → 移指针</strong>（先存后改）</p>
+<div class="keyidea">昨天错这题不是坏事：错在哪，就说明半衰期在哪——今天整节课都在替你还这笔债。
+206 的循环体就是这三步本身，一步不多，一步不少。</div>
+
+<h2>反转到底难在哪</h2>
+<p>逻辑上毫无难度：每个节点的 <code>next</code> 掉个头。难在<strong>你正踩着链走路，
+脚下每一格的指针都在被你改</strong>——这是「边遍历边改链」的最纯样本（707 的 addAtTail
+死循环就是这类操作的翻车现场）。对策不是小心翼翼，是把世界切成两半：</p>
+<ul>
+  <li><strong>prev 身后</strong>：已反转世界——箭头全部朝左，由 prev 领衔；</li>
+  <li><strong>cur 身前</strong>：未动世界——箭头仍朝右，由 cur 领衔；</li>
+  <li><strong>next</strong>：动手前提前保住的桥——cur 掉头后唯一的退路。</li>
+</ul>
+<p>两个世界以 cur 为界。每轮三步只干三件事：保桥、掉头、挪边界。</p>
+
+<h2>决策对照表</h2>
+<table>
+  <thead><tr><th>决策点</th><th>规则（206 反转链表）</th></tr></thead>
+  <tbody>
+    <tr><td>初始化</td><td><code>prev = null</code>，<code>cur = head</code>（prev 是已反转世界的头，开局为空）</td></tr>
+    <tr><td>循环条件</td><td><code>cur !== null</code>（未动世界还有货）</td></tr>
+    <tr><td>第一步 · 存</td><td><code>next = cur.next</code> —— 后继的唯一线索，掉头前先保命</td></tr>
+    <tr><td>第二步 · 改</td><td><code>cur.next = prev</code> —— 掉头，接上已反转世界</td></tr>
+    <tr><td>第三步 · 移</td><td><code>prev = cur; cur = next</code> —— 两个世界的边界各挪一格</td></tr>
+    <tr><td>终止</td><td>cur 为 null 时 prev 恰是原尾 = <strong>新头，返回 prev</strong></td></tr>
+  </tbody>
+</table>
+
+<div class="keyidea">不变量（老朋友第六次登场）：<strong>prev 领衔的链 = 原前缀 [0..i) 的逆序；
+cur = 原第 i 个节点</strong>。它是快慢指针「读写分工」的亲戚——slow=prev（写）、fast=cur（读），
+只是这次「写」的对象从数组值换成了指针本身。模型换了衣裳，思想还是同一件。</div>
+
+<div class="pitfall">四个高频坑，三个你在 707 亲手踩过：
+① <strong>先改后存</strong>——next 取到的是改完的新值，后继失联（V1 自环同款）；
+② <strong>手痒加第四步</strong>——比如用 <code>cur = cur.next</code> 代替 <code>cur = next</code>，
+掉头之后 cur.next 已经不是「下一个」了；
+③ <strong>返回 cur</strong>——循环结束时 cur 是 null，返回它等于返回空表；
+④ <strong>想给空表/单节点加特判</strong>——别。空表：cur=head=null，循环零次，返回 prev=null；
+单节点：一轮即止。模板连续剧第三集：<strong>先问模板能不能吞，再考虑特判</strong>。</div>
+
+<h2>亲手走一遍：两个世界</h2>
+<p>三个预设：标准五节点、最短两节点（三步看得最清楚）、单节点。
+<strong>每帧是动作前状态</strong>——点「下一步」前，先说出这一轮的三步各是什么、箭头哪一根会翻。</p>
+
+<div class="sim no-print">
+  <div class="sim-controls">
+    <span>场景：
+      <button class="btn tgt" type="button" data-p="0">[1,2,3,4,5]</button>
+      <button class="btn tgt" type="button" data-p="1">[1,2]</button>
+      <button class="btn tgt" type="button" data-p="2">[1]</button>
+    </span>
+    <button class="btn" type="button" id="backbtn" disabled>上一步</button>
+    <button class="btn btn-primary" type="button" id="stepbtn" disabled>下一步</button>
+    <button class="btn" type="button" id="resetbtn">重置</button>
+  </div>
+  <div id="llviz" style="display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin:1rem 0;"></div>
+  <div class="sim-note" id="invariant">先选一个场景。（← = 已反转箭头；⇢ = 已断开的旧链；虚线框 = 本轮要存的 next）</div>
+  <ol class="sim-log" id="simlog"></ol>
+  <p class="sim-result" id="simres"></p>
+</div>
+
+<h2>检查站：五道题</h2>
+
+<div class="quiz" data-quiz>
+<script type="application/json">
+{
+  "questions": [
+    {
+      "q": "（开课仪式重考）「改链三步」的正确顺序是？",
+      "options": [
+        { "t": "改指向 → 存 next → 移指针", "why": "错。第一步就把 cur.next 覆盖了，存到的是新值——707 V1 自环事故同款，后继从此失联。" },
+        { "t": "移指针 → 存 next → 改指向", "why": "错。人先走，参照系已经变了——改到别人的链上去了。" },
+        { "t": "存 next → 改指向 → 移指针", "why": "对。存是保命符（后继唯一线索）、改是本体（接线）、移是收尾（换参照系）——任何别的顺序，都有某一步的输入已被污染。" },
+        { "t": "存 next → 移指针 → 改指向", "why": "错。走了才改，掉头位置错位——节点接到了错误的前驱上。" }
+      ],
+      "answer": 2
+    },
+    {
+      "q": "prev 的初始值为什么是 null？",
+      "options": [
+        { "t": "原头反转后是尾，尾的 next 天生为 null", "why": "对。第一轮 cur.next = prev = null，正是把原头预先接到「它未来的尾巴状态」上——null 不是随手给的初值，是终态的预演。" },
+        { "t": "null 能让循环条件写得更短", "why": "错。循环条件看的是 cur（cur !== null），与 prev 的初值毫无关系。" },
+        { "t": "防止 prev 指向被回收的内存", "why": "错。JS 的引用与回收不挑这个理；prev = null 是语义选择，不是内存技巧。" },
+        { "t": "它其实是一个隐形的 dummy", "why": "错。dummy 是真节点、占一格；null 连对象都不是。不过它确实起到「让第一个节点不特殊」的同类作用——想通这层更好。" }
+      ],
+      "answer": 0
+    },
+    {
+      "q": "循环结束（cur === null）时，返回谁？",
+      "options": [
+        { "t": "返回 cur，它停在链尾", "why": "错。cur 停在链尾的下一步——null。返回它等于返回空表。" },
+        { "t": "返回 head，头就是头", "why": "错。head 还指着原头，而原头反转后成了尾——链早已从它那里掉头断开。" },
+        { "t": "返回 next，它是最后保存的", "why": "错。next 每轮被覆盖，结束时的值同样是 null。" },
+        { "t": "返回 prev，它恰是原尾 = 新头", "why": "对。cur = null 退出时，prev 刚接完最后一个节点（原尾）——反转之后，它就是新头。" }
+      ],
+      "answer": 3
+    },
+    {
+      "q": "head = null（空表）时会发生什么？",
+      "options": [
+        { "t": "必须特判：直接 return head", "why": "错。这么写能对，但模板已天然覆盖——707 的教训：先问模板能不能吞，再考虑特判。" },
+        { "t": "循环零次，直接返回 prev = null", "why": "对。cur = head = null，循环体一次不进，返回 prev = null——空进空出，零特判。单节点同理：一轮即止。" },
+        { "t": "会抛出空指针错误", "why": "错。cur = null 时循环根本不进入，什么也不执行，何错之有。" },
+        { "t": "要先建 dummy 才安全", "why": "错。206 不需要前驱视角，prev/cur 双指针自足；dummy 是 203/707 那类「操作前驱」题的武器。" }
+      ],
+      "answer": 1
+    },
+    {
+      "q": "反转进行到第 i 轮（动作前），不变量是？",
+      "options": [
+        { "t": "prev 领衔的链 = 原前缀 [0..i) 的逆序", "why": "对。cur = 原第 i 个；两个世界以 cur 为界——读写分工的亲戚：prev 写、cur 读，写的对象从数组值换成了指针。" },
+        { "t": "prev 领衔的链 = 原前缀的原序", "why": "错。原序在 prev 世界里已被逐个掉头，「原序」早就没了。" },
+        { "t": "cur 领衔的链包含全部节点", "why": "错。cur 身后只有未动的 [i..n)；已反转的那一半由 prev 领衔。" },
+        { "t": "next 暂存的是已反转部分", "why": "错。已反转部分由 prev 领衔；next 只是本轮后继的单一暂存变量。" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+</script>
+</div>
+
+<h2>实战</h2>
+<div class="task">
+  <ul>
+    <li><strong>206 反转链表</strong>：
+    <a href="../practice/Easy/lc0206-reverse-linked-list.js">practice/Easy/lc0206</a> →
+    提交<a href="https://leetcode.cn/problems/reverse-linked-list/">力扣 206</a>。
+    动笔前先在纸上写注释：三步各一行，再翻译成代码。空表和单节点<strong>不许特判</strong>——
+    跑用例时看着它们被模板吞掉。</li>
+  </ul>
+  <p><strong>复习提醒</strong>：<strong>59 的 D+3 就是今天</strong>（已顺延一次，别再漂）——动笔前口述两种 guard：
+  计数版「填够数了吗」、边界版「t ≤ b 还成立吗」，各一句，然后盲写；
+  707 的 D+3 是明天（11-24）。</p>
+  <details class="problem">
+    <summary>📋 完整题面 · 206 反转链表（Easy）</summary>
+    <p>给你单链表的头节点 <code>head</code>，请你反转链表，并返回反转后的链表。</p>
+    <pre>示例 1：head = [1,2,3,4,5] → [5,4,3,2,1]
+示例 2：head = [1,2]       → [2,1]
+示例 3：head = []          → []</pre>
+    <p>提示：链表中节点的数目范围是 [0, 5000]；-5000 ≤ Node.val ≤ 5000。</p>
+    <p><strong>进阶</strong>：链表可以迭代或递归地反转。你能否用两种方法解决这道题？</p>
+  </details>
+</div>
+
+<h2>延伸</h2>
+<p><strong>Primary source</strong>：<a href="https://programmercarl.com/algo/">随想录总览 → 链表章</a>（左侧导航进入，206 一节与本课同序）+
+<a href="https://leetcode.cn/problems/reverse-linked-list/solutions/">力扣 206 官方题解</a>。</p>
+<p><strong>递归法的预告</strong>（本周期先不看代码）：递归一路扎到链尾，回程的每一层做一次「掉头」——
+相当于调用栈替你保管了 prev。把它想清楚的那天，你对三步的理解才算闭环。D+7 复习 206 时再看递归版。</p>
+
+<div class="keyidea">链表第二课的敌人还是「指针晕」。模拟器里每根箭头翻转前，先说一句：
+「prev 现在领衔谁、cur 是原来的第几个、next 存的是谁」。说不清就回来问——随时问老师。</div>
+
+<nav class="lesson-nav">
+  <a href="0008-dummy-head.html">← 0008 虚拟头节点</a>
+  <span class="disabled">下一课 0010 · 环形链表（未解锁）</span>
+</nav>
+
+<footer>
+<p>algorithm-road · 阶段 1 · 链表 · 2026-11-23 · 打卡由 agent 记账。</p>
+</footer>
+
+<script src="../assets/sim.js"></script>
+<script src="../assets/quiz.js"></script>
+<script>
+(function () {
+  "use strict";
+  var PRESETS = [
+    { arr: [1, 2, 3, 4, 5] },
+    { arr: [1, 2] },
+    { arr: [1] },
+  ];
+  var viz = document.getElementById("llviz");
+  var invEl = document.getElementById("invariant");
+  var logEl = document.getElementById("simlog");
+  var resEl = document.getElementById("simres");
+  var stepBtn = document.getElementById("stepbtn");
+  var backBtn = document.getElementById("backbtn");
+  var resetBtn = document.getElementById("resetbtn");
+  var S = null, lastPick = null;
+
+  // steps[k] = 第 k+1 轮动作前：已反转 i=k 个；steps[n] = 终态
+  function plan(p) {
+    var a = p.arr, n = a.length, steps = [];
+    for (var k = 0; k < n; k++) {
+      var nx = k + 1 < n ? a[k + 1] : "null";
+      steps.push({
+        i: k,
+        note: "第 " + (k + 1) + " 轮（动作前）：存 next=" + nx + " → 改 " + a[k] + ".next=prev → 移 prev=" + a[k] + "、cur=" + nx,
+      });
+    }
+    steps.push({ i: n, note: "cur = null → 循环结束，返回 prev = " + (n ? a[n - 1] : "null") + "（新头）" });
+    return steps;
+  }
+
+  function start(idx) {
+    lastPick = idx;
+    var p = PRESETS[idx];
+    S = { p: p, steps: plan(p), i: 0 };
+    logEl.innerHTML = ""; resEl.textContent = "";
+    stepBtn.disabled = false;
+    render();
+  }
+
+  function done() { return S.i >= S.steps.length; }
+
+  function cell(v, mk, dashed) {
+    var cls = "cell" + (v === "∅" ? "" : " in") + (dashed ? " div" : "");
+    return '<div class="' + cls + '"><div class="v">' + v + '</div><div class="mk">' + (mk || "") + '</div></div>';
+  }
+  function arrow(sym, dim) {
+    return '<div style="color:' + (dim ? "#999" : "var(--accent)") + ';font-family:var(--mono);">' + sym + "</div>";
+  }
+
+  function render() {
+    if (!S) { viz.innerHTML = ""; return; }
+    var a = S.p.arr, n = a.length;
+    var st = S.steps[S.i];
+    var i = st ? st.i : n; // 已反转个数
+    var html = "";
+    for (var j = 0; j < n; j++) {
+      var mk = "", dashed = false;
+      if (j === i - 1) mk = i === n ? "prev·新头" : "prev";
+      if (j === i && i < n) mk = "cur";
+      if (j === i + 1) { mk = "next"; dashed = true; }
+      html += cell(j < n ? a[j] : "∅", mk, dashed);
+      if (j < n - 1) {
+        if (j < i - 1) html += arrow("←", false);        // 已反转段：箭头朝左
+        else if (j === i - 1) html += arrow("⇢", true);  // 旧链已断
+        else html += arrow("→", false);                  // 未动段：原序
+      }
+    }
+    if (i === 0) html = cell("∅", "prev", false) + html;          // prev=null 徽标
+    if (i === n) html += cell("∅", "cur", false);                 // cur=null 徽标
+    viz.innerHTML = html;
+    if (st) {
+      invEl.textContent = "不变量：prev 领衔 = 原 [0.." + i + ") 的逆序；cur = 原第 " + i + " 个。先预测：这轮三步各是什么、哪根箭头会翻？";
+    } else {
+      invEl.textContent = "全部 " + n + " 轮完成：链已整体掉头，新头 = " + a[n - 1] + "。";
+      resEl.textContent = "✓ 206 完成";
+    }
+    backBtn.disabled = !S || S.i === 0;
+    stepBtn.disabled = done();
+  }
+
+  backBtn.addEventListener("click", function () {
+    if (!S || S.i === 0) return;
+    S.i--;
+    if (logEl.lastChild) logEl.removeChild(logEl.lastChild);
+    render();
+  });
+
+  stepBtn.addEventListener("click", function () {
+    if (!S || done()) return;
+    var st = S.steps[S.i];
+    S.i++;
+    var li = document.createElement("li");
+    li.textContent = st.note;
+    logEl.appendChild(li);
+    render();
+  });
+
+  resetBtn.addEventListener("click", function () {
+    if (lastPick !== null) { start(lastPick); return; }
+    S = null; stepBtn.disabled = true; backBtn.disabled = true;
+    viz.innerHTML = ""; logEl.innerHTML = ""; resEl.textContent = "";
+    invEl.textContent = "已重置。选一个场景。";
+  });
+
+  simPresets(document, function (b) { start(parseInt(b.getAttribute("data-p"), 10)); });
+})();
+</script>
+</main>
+</body>
+</html>
