@@ -5,7 +5,15 @@
 const { ListNode, toList, toArray } = require('../_utils/list');
 
 var reverseList = function (head) {
-  // TODO 从这里开始（第一行建议：let prev = null; let cur = head;）
+  let prev = null;
+  let cur = head;
+  while (cur) {
+    const next = cur.next;
+    cur.next = prev;
+    prev = cur;
+    cur = next;
+  }
+  return prev;
 };
 
 // ---------- 本地测试（提交力扣时只复制上面的 reverseList 函数）----------
